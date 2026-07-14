@@ -1,0 +1,127 @@
+{
+  "regression": {
+    "lightgbm": {
+      "mae": 3.7445099478776473,
+      "rmse": 4.68553090562731
+    },
+    "random_forest": {
+      "mae": 3.9790993884279793,
+      "rmse": 4.8968521738297905
+    },
+    "mean_baseline": {
+      "mae": 6.465738461541,
+      "rmse": 7.942451890913459
+    }
+  },
+  "classification": {
+    "lightgbm": {
+      "precision": 0.7425742574257426,
+      "recall": 0.6097560975609756,
+      "f1": 0.6696428571428571,
+      "pr_auc": 0.7736694999355203,
+      "roc_auc": 0.8684511754864842,
+      "confusion_matrix": {
+        "tn": 251,
+        "fp": 26,
+        "fn": 48,
+        "tp": 75
+      }
+    },
+    "random_forest": {
+      "precision": 0.7252747252747253,
+      "recall": 0.5365853658536586,
+      "f1": 0.616822429906542,
+      "pr_auc": 0.7255402635802659,
+      "roc_auc": 0.853687887059376,
+      "confusion_matrix": {
+        "tn": 252,
+        "fp": 25,
+        "fn": 57,
+        "tp": 66
+      }
+    },
+    "rule_baseline": {
+      "precision": 0.828125,
+      "recall": 0.43089430894308944,
+      "f1": 0.5668449197860963
+    }
+  },
+  "cv_generalization": {
+    "groupkfold_mae_mean": 4.652740737903921,
+    "groupkfold_mae_std": 0.2255816098225779,
+    "groupkfold_pr_auc_mean": 0.7692840832540808,
+    "groupkfold_pr_auc_std": 0.03422871531904049
+  },
+  "n_train": 1600,
+  "n_test": 400,
+  "best_params_reg": {
+    "num_leaves": 101,
+    "max_depth": 12,
+    "learning_rate": 0.08699590328968762,
+    "n_estimators": 458,
+    "min_child_samples": 54,
+    "subsample": 0.8002674882929464,
+    "colsample_bytree": 0.7358498144821762,
+    "reg_alpha": 1.6619703101021621e-06,
+    "reg_lambda": 0.6209363552247152
+  },
+  "best_params_clf": {
+    "num_leaves": 49,
+    "max_depth": 3,
+    "learning_rate": 0.07766184280392888,
+    "n_estimators": 508,
+    "min_child_samples": 11,
+    "subsample": 0.798070764044508,
+    "colsample_bytree": 0.6137554084460873,
+    "reg_alpha": 0.8131129951713353,
+    "reg_lambda": 1.7828684416997836e-06
+  },
+  "feature_importance": {
+    "regressor_gain": {
+      "wsev_x_peak": 0.23379576812989258,
+      "prev_leg_delay": 0.20579626680301707,
+      "prevdelay_x_slack": 0.12410538870951011,
+      "weather_severity": 0.10347045748505107,
+      "cong_x_peak": 0.10184275407565441,
+      "airport_congestion": 0.0985357002850954,
+      "turnaround_slack": 0.03555442737652524,
+      "origin": 0.01815733478974154,
+      "sched_duration": 0.01762260330778142,
+      "dep_hour_sin": 0.014084444884152591,
+      "dest": 0.011277532960223666,
+      "distance": 0.009604557680871354,
+      "dep_hour_cos": 0.007362698115787468,
+      "carrier_ontime_rate": 0.007096441173536163,
+      "airline": 0.005294826330345745,
+      "aircraft_type": 0.0031402509122957297,
+      "is_peak": 0.0030854154960402403,
+      "time_bucket": 0.0001731314844782023,
+      "is_weekend": 0.0,
+      "is_holiday": 0.0,
+      "day_of_week": 0.0
+    },
+    "classifier_gain": {
+      "prev_leg_delay": 0.2306179203215648,
+      "wsev_x_peak": 0.19278885486839106,
+      "weather_severity": 0.13575753718090433,
+      "cong_x_peak": 0.12854339713126395,
+      "prevdelay_x_slack": 0.08882043947603833,
+      "airport_congestion": 0.0718139549562378,
+      "dep_hour_sin": 0.05230560829115043,
+      "turnaround_slack": 0.028091817491857872,
+      "sched_duration": 0.02205894230716338,
+      "origin": 0.013204522026764804,
+      "carrier_ontime_rate": 0.012686363549014916,
+      "distance": 0.00969576981623931,
+      "dest": 0.004800992172648851,
+      "dep_hour_cos": 0.003805759589368841,
+      "aircraft_type": 0.0031002231006642495,
+      "is_peak": 0.0014424210174170246,
+      "airline": 0.0004654767033100504,
+      "is_weekend": 0.0,
+      "is_holiday": 0.0,
+      "time_bucket": 0.0,
+      "day_of_week": 0.0
+    }
+  }
+}

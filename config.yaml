@@ -1,0 +1,148 @@
+# =====================================================================
+# Global configuration for the flight-delay-scheduling system.
+# Every module reads from this file; no magic numbers are hard-coded.
+# =====================================================================
+
+# Global random seed. All stochastic processes read this value.
+seed: 42
+
+# Project paths. `root: null` => auto-detect the repository root.
+# All other paths are resolved relative to `root`.
+paths:
+  root: null
+  data_raw: data/raw
+  data_processed: data/processed
+  outputs: outputs
+  figures: outputs/figures
+  models: outputs/models
+  reports: outputs/reports
+
+# ---------------------------------------------------------------------
+# Synthetic data generator (primary data source, zero external deps).
+# ---------------------------------------------------------------------
+synth:
+  n_flights: 2000
+  n_airports: 10
+  n_carriers: 6
+  n_aircraft_types: 5
+  n_tails: 120
+  legs_min: 2            # min legs flown per aircraft (tail) per day
+  legs_max: 4            # max legs flown per aircraft (tail) per day
+  day_start_hour: 5      # first scheduled departure hour
+  day_end_hour: 22       # last scheduled departure hour
+  base_date: "2026-07-14"
+
+  # Aircraft cruise speed range (km/h) -> used to derive flight duration.
+  speed_kmh_min: 700
+  speed_kmh_max: 850
+  distance_km_min: 250
+  distance_km_max: 2400
+
+  # Minimum turnaround minutes per aircraft type (sampled in this range).
+  turnaround_min: 30
+  turnaround_max: 55
+  # Actual scheduled turnaround = min_turnaround + slack (minutes).
+  turnaround_slack_min: 10
+  turnaround_slack_max: 45
+
+  # Raw weather field ranges (per airport, per hour; spatiotemporally smooth).
+  weather:
+    vis_min: 0.5         # visibility (km); lower is worse
+    vis_max: 12.0
+    wind_max: 45.0       # wind speed (knots)
+    precip_max: 12.0     # precipitation (mm/h)
+    thunder_prob: 0.10   # base probability of a thunderstorm flag
+    smoothing: 0.6       # AR(1) temporal smoothing factor in [0,1]
+
+  # Weights for the weather-severity composite (normalized internally to sum 1).
+  weather_severity_weights:
+    low_vis: 0.35
+    wind: 0.25
+    precip: 0.25
+    thunder: 0.15
+
+  # Causal label model coefficients (see README / spec section 6.1).
+  # dep_delay = max(0, a0 + a1*wsev + a2*cong + a3*peak
+  #                    + a4*wsev*peak + a5*prev_leg_delay + N(0, sigma))
+  coeffs:
+    a0: -10.0    # intercept (tuned so is_delayed15 positive rate ~0.31)
+    a1: 21.0     # weather_severity
+    a2: 15.0     # congestion
+    a3: 5.0      # peak
+    a4: 12.0     # weather_severity * peak (non-linear interaction)
+    a5: 0.70     # prev_leg_delay propagation
+    sigma: 4.5   # gaussian noise std (minutes; tuned for identifiable signal)
+
+# ---------------------------------------------------------------------
+# Feature engineering.
+# ---------------------------------------------------------------------
+features:
+  congestion_window_min: 30     # +/- window (minutes) for airport congestion
+  peak_windows:                 # [start_hour, end_hour) treated as peak
+    - [7, 10]
+    - [17, 20]
+  holidays:                     # ISO dates treated as holidays
+    - "2026-07-04"
+  time_buckets:                 # hour -> coarse bucket label boundaries
+    early: [5, 7]
+    morning_peak: [7, 10]
+    midday: [10, 17]
+    evening_peak: [17, 20]
+    night: [20, 24]
+
+# ---------------------------------------------------------------------
+# Prediction (LightGBM double-head + baselines + Optuna).
+# ---------------------------------------------------------------------
+predict:
+  test_size: 0.20               # trailing fraction for the time-series split
+  group_kfold_splits: 5         # GroupKFold on tail_id
+  optuna_trials: 30             # HPO trials (spec suggests 50-100; CI overrides)
+  optuna_timeout_s: 180
+  early_stopping_rounds: 50
+  rule_baseline:
+    weather_severity_threshold: 0.55
+    prev_leg_delay_threshold: 20.0
+  # LightGBM Optuna search space.
+  search_space:
+    num_leaves: [15, 127]
+    max_depth: [3, 12]
+    learning_rate: [0.01, 0.2]         # log-uniform
+    n_estimators: [200, 900]
+    min_child_samples: [5, 60]
+    subsample: [0.6, 1.0]
+    colsample_bytree: [0.6, 1.0]
+    reg_alpha: [1.0e-8, 5.0]           # log-uniform
+    reg_lambda: [1.0e-8, 5.0]          # log-uniform
+
+# ---------------------------------------------------------------------
+# Risk grading (quantile 5-level).
+# ---------------------------------------------------------------------
+risk:
+  source: delay                 # "delay" (predicted minutes) or "proba"
+  quantiles: [0.2, 0.4, 0.6, 0.8]
+  n_levels: 5
+  high_risk_levels: [4, 5]      # L4 / L5 are high risk
+
+# ---------------------------------------------------------------------
+# Scheduling optimization (CP-SAT + greedy baseline).
+# ---------------------------------------------------------------------
+schedule:
+  slot_minutes: 5               # offset discretization
+  max_offset_min: 30            # K: |offset| <= K
+  window_minutes: 15            # capacity accounting window
+  runway_capacity: 5            # C: max departures per airport per window
+  curfew_hours: [0, 5]          # [start, end) no departures allowed
+  weight_high_risk: 5.0         # objective weight for high-risk flights
+  weight_normal: 1.0            # objective weight for normal flights
+  capacity_penalty: 8.0         # soft-constraint penalty per excess departure
+  only_high_risk: false         # optimize all flights (CP-SAT balances capacity globally)
+  solver_time_limit_s: 25
+  greedy_max_passes: 6
+
+# ---------------------------------------------------------------------
+# Metric targets (for reporting / pass-fail annotation only).
+# ---------------------------------------------------------------------
+metrics:
+  high_risk_recall_target: 0.80
+  constraint_satisfaction_target: 0.85
+  delay_reduction_target: 1.0

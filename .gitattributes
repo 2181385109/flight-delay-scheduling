@@ -1,0 +1,10 @@
+# Normalize text files to LF in the repository (CI runs on Ubuntu).
+* text=auto eol=lf
+
+# Treat binaries as binary (no line-ending conversion).
+*.png binary
+*.gif binary
+*.mp4 binary
+*.parquet binary
+*.pkl binary
+*.ico binary

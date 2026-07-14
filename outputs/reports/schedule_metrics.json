@@ -1,0 +1,252 @@
+{
+  "primary_solver": "cpsat",
+  "comparison": {
+    "cpsat": {
+      "solver": "cpsat",
+      "solver_meta": {
+        "status": "OPTIMAL",
+        "solve_time_s": 7.7415728,
+        "objective": 64473.74,
+        "num_solutions": 21
+      },
+      "before": {
+        "total_delay": 22109.719281897607,
+        "weighted_total_delay": 78347.29379560119,
+        "mean_delay": 11.054859640948804,
+        "high_risk_mean_delay": 17.27198234450356,
+        "high_risk_mean_delay_before": 17.27198234450356,
+        "high_risk_delay_reduction": 0.0,
+        "n_high_risk": 814,
+        "satisfaction_rate": 0.9847110650427572,
+        "turnaround_rate": 1.0,
+        "curfew_rate": 1.0,
+        "capacity_rate": 0.9120715350223547,
+        "capacity_windows": 671,
+        "capacity_violations": 59,
+        "capacity_excess_departures": 96
+      },
+      "after": {
+        "total_delay": 17962.501480451036,
+        "weighted_total_delay": 64297.8406094955,
+        "mean_delay": 8.981250740225518,
+        "high_risk_mean_delay": 14.23075526076304,
+        "high_risk_mean_delay_before": 17.27198234450356,
+        "high_risk_delay_reduction": 3.0412270837405164,
+        "n_high_risk": 814,
+        "satisfaction_rate": 0.9981358189081225,
+        "turnaround_rate": 1.0,
+        "curfew_rate": 1.0,
+        "capacity_rate": 0.9876543209876543,
+        "capacity_windows": 567,
+        "capacity_violations": 7,
+        "capacity_excess_departures": 22
+      }
+    },
+    "greedy": {
+      "solver": "greedy",
+      "solver_meta": {
+        "passes": 6
+      },
+      "before": {
+        "total_delay": 22109.719281897607,
+        "weighted_total_delay": 78347.29379560119,
+        "mean_delay": 11.054859640948804,
+        "high_risk_mean_delay": 17.27198234450356,
+        "high_risk_mean_delay_before": 17.27198234450356,
+        "high_risk_delay_reduction": 0.0,
+        "n_high_risk": 814,
+        "satisfaction_rate": 0.9847110650427572,
+        "turnaround_rate": 1.0,
+        "curfew_rate": 1.0,
+        "capacity_rate": 0.9120715350223547,
+        "capacity_windows": 671,
+        "capacity_violations": 59,
+        "capacity_excess_departures": 96
+      },
+      "after": {
+        "total_delay": 18418.095614679714,
+        "weighted_total_delay": 65489.24853335682,
+        "mean_delay": 9.209047807339857,
+        "high_risk_mean_delay": 14.456742296890999,
+        "high_risk_mean_delay_before": 17.27198234450356,
+        "high_risk_delay_reduction": 2.8152400476125576,
+        "n_high_risk": 814,
+        "satisfaction_rate": 0.9973375931842385,
+        "turnaround_rate": 1.0,
+        "curfew_rate": 1.0,
+        "capacity_rate": 0.9823943661971831,
+        "capacity_windows": 568,
+        "capacity_violations": 10,
+        "capacity_excess_departures": 28
+      }
+    }
+  },
+  "trace": {
+    "cpsat": [
+      {
+        "step": 0,
+        "weighted_total_delay": 76765.78492273176,
+        "high_risk_mean_delay": 16.78575577814781,
+        "satisfaction_rate": 0.987012987012987
+      },
+      {
+        "step": 1,
+        "weighted_total_delay": 75972.71572950477,
+        "high_risk_mean_delay": 16.66820657408689,
+        "satisfaction_rate": 0.9851832596828698
+      },
+      {
+        "step": 2,
+        "weighted_total_delay": 74889.70000243348,
+        "high_risk_mean_delay": 16.406242737381852,
+        "satisfaction_rate": 0.9922360248447205
+      },
+      {
+        "step": 3,
+        "weighted_total_delay": 73055.35501312083,
+        "high_risk_mean_delay": 16.050684218686843,
+        "satisfaction_rate": 0.9929942916450442
+      },
+      {
+        "step": 4,
+        "weighted_total_delay": 68806.29326077204,
+        "high_risk_mean_delay": 15.222595633944408,
+        "satisfaction_rate": 0.977516339869281
+      },
+      {
+        "step": 5,
+        "weighted_total_delay": 68681.65132026028,
+        "high_risk_mean_delay": 15.20070774086336,
+        "satisfaction_rate": 0.9779816513761468
+      },
+      {
+        "step": 6,
+        "weighted_total_delay": 68399.01859549104,
+        "high_risk_mean_delay": 15.132634060551243,
+        "satisfaction_rate": 0.9831844456121913
+      },
+      {
+        "step": 7,
+        "weighted_total_delay": 67971.94834892947,
+        "high_risk_mean_delay": 15.037085979172902,
+        "satisfaction_rate": 0.9834297738032615
+      },
+      {
+        "step": 8,
+        "weighted_total_delay": 67862.03212522248,
+        "high_risk_mean_delay": 15.019463791615408,
+        "satisfaction_rate": 0.9834079536476166
+      },
+      {
+        "step": 9,
+        "weighted_total_delay": 67862.03212522248,
+        "high_risk_mean_delay": 15.019463791615408,
+        "satisfaction_rate": 0.9834123222748815
+      },
+      {
+        "step": 10,
+        "weighted_total_delay": 67857.79598922165,
+        "high_risk_mean_delay": 15.018422971959183,
+        "satisfaction_rate": 0.9834123222748815
+      },
+      {
+        "step": 11,
+        "weighted_total_delay": 67857.84946032023,
+        "high_risk_mean_delay": 15.018422971959183,
+        "satisfaction_rate": 0.9834123222748815
+      },
+      {
+        "step": 12,
+        "weighted_total_delay": 67858.16879473269,
+        "high_risk_mean_delay": 15.018422971959183,
+        "satisfaction_rate": 0.9836756187467088
+      },
+      {
+        "step": 13,
+        "weighted_total_delay": 67863.76181187264,
+        "high_risk_mean_delay": 15.019797177644675,
+        "satisfaction_rate": 0.9836756187467088
+      },
+      {
+        "step": 14,
+        "weighted_total_delay": 67858.16879473269,
+        "high_risk_mean_delay": 15.018422971959183,
+        "satisfaction_rate": 0.9836799157673072
+      },
+      {
+        "step": 15,
+        "weighted_total_delay": 67857.35957846379,
+        "high_risk_mean_delay": 15.018422971959183,
+        "satisfaction_rate": 0.9836799157673072
+      },
+      {
+        "step": 16,
+        "weighted_total_delay": 67717.89443028576,
+        "high_risk_mean_delay": 14.964956592388194,
+        "satisfaction_rate": 0.9918911849332984
+      },
+      {
+        "step": 17,
+        "weighted_total_delay": 64307.16099851493,
+        "high_risk_mean_delay": 14.230907238769815,
+        "satisfaction_rate": 0.9978700745473909
+      },
+      {
+        "step": 18,
+        "weighted_total_delay": 64306.708986249636,
+        "high_risk_mean_delay": 14.230907238769815,
+        "satisfaction_rate": 0.9981353223228556
+      },
+      {
+        "step": 19,
+        "weighted_total_delay": 64306.09043576206,
+        "high_risk_mean_delay": 14.23075526076304,
+        "satisfaction_rate": 0.9981353223228556
+      },
+      {
+        "step": 20,
+        "weighted_total_delay": 64297.8406094955,
+        "high_risk_mean_delay": 14.23075526076304,
+        "satisfaction_rate": 0.9981358189081225
+      }
+    ],
+    "greedy": [
+      {
+        "step": 0,
+        "weighted_total_delay": 66341.93723098701,
+        "high_risk_mean_delay": 14.641007564107316,
+        "satisfaction_rate": 0.9955002646903124
+      },
+      {
+        "step": 1,
+        "weighted_total_delay": 65536.33568292538,
+        "high_risk_mean_delay": 14.463434020672528,
+        "satisfaction_rate": 0.99707368981112
+      },
+      {
+        "step": 2,
+        "weighted_total_delay": 65496.54567595714,
+        "high_risk_mean_delay": 14.456742296890999,
+        "satisfaction_rate": 0.9973375931842385
+      },
+      {
+        "step": 3,
+        "weighted_total_delay": 65489.24853335682,
+        "high_risk_mean_delay": 14.456742296890999,
+        "satisfaction_rate": 0.9973375931842385
+      },
+      {
+        "step": 4,
+        "weighted_total_delay": 65489.24853335682,
+        "high_risk_mean_delay": 14.456742296890999,
+        "satisfaction_rate": 0.9973375931842385
+      },
+      {
+        "step": 5,
+        "weighted_total_delay": 65489.24853335682,
+        "high_risk_mean_delay": 14.456742296890999,
+        "satisfaction_rate": 0.9973375931842385
+      }
+    ]
+  }
+}

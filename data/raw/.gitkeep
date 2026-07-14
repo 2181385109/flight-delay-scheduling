@@ -1,0 +1,2 @@
+# Place real / public flight CSVs here (see src/flightopt/data/loader.py).
+# Contents are gitignored; only this placeholder is tracked.

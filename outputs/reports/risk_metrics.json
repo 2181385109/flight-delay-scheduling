@@ -1,0 +1,43 @@
+{
+  "source": "delay",
+  "cutpoints": [
+    2.039193607314718,
+    5.058553504972082,
+    8.75576269199108,
+    12.407427908472975
+  ],
+  "capture_test": {
+    "high_risk_recall": 0.8292682926829268,
+    "high_risk_precision": 0.5862068965517241,
+    "high_risk_f1": 0.6868686868686869,
+    "flagged_rate": 0.435,
+    "positive_rate": 0.3075
+  },
+  "capture_all": {
+    "high_risk_recall": 0.8232323232323232,
+    "high_risk_precision": 0.6007371007371007,
+    "high_risk_f1": 0.6946022727272727,
+    "flagged_rate": 0.407,
+    "positive_rate": 0.297
+  },
+  "capture_proba_test": {
+    "high_risk_recall": 0.8943089430894309,
+    "high_risk_precision": 0.5288461538461539,
+    "high_risk_f1": 0.6646525679758308,
+    "flagged_rate": 0.52,
+    "positive_rate": 0.3075
+  },
+  "rule_baseline_test": {
+    "high_risk_recall": 0.43089430894308944,
+    "high_risk_precision": 0.828125,
+    "high_risk_f1": 0.5668449197860963,
+    "flagged_rate": 0.16
+  },
+  "level_counts": {
+    "1": 399,
+    "2": 385,
+    "3": 402,
+    "4": 385,
+    "5": 429
+  }
+}
