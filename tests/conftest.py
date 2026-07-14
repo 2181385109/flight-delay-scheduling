@@ -9,7 +9,7 @@ from flightopt.config import load_config
 # Small + fast overrides so the whole suite runs in seconds.
 SMALL = {
     "synth": {"n_flights": 600},
-    "predict": {"optuna_trials": 4, "group_kfold_splits": 3, "optuna_timeout_s": 120},
+    "predict": {"optuna_trials": 6, "group_kfold_splits": 3, "optuna_timeout_s": 120},
     "schedule": {"solver_time_limit_s": 6, "only_high_risk": False},
 }
 
