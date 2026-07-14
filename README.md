@@ -1,6 +1,6 @@
 # Flight Delay Prediction & Intelligent Scheduling Optimization
 
-[![CI](https://github.com/OWNER/flight-delay-scheduling/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/flight-delay-scheduling/actions/workflows/ci.yml)
+[![CI](https://github.com/2181385109/flight-delay-scheduling/actions/workflows/ci.yml/badge.svg)](https://github.com/2181385109/flight-delay-scheduling/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
