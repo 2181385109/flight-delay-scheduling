@@ -129,9 +129,17 @@ schedule:
   weight_high_risk: 5.0         # objective weight for high-risk flights
   weight_normal: 1.0            # objective weight for normal flights
   capacity_penalty: 8.0         # soft-constraint penalty per excess departure
+  capacity_window_penalty: 2.0  # extra penalty per breached window (breaks the
+                                # degenerate optimum -> reproducible violations)
   only_high_risk: false         # optimize all flights (CP-SAT balances capacity globally)
-  solver_time_limit_s: 25
+  # Long enough to *prove* optimality (~30s on a ~1000-flight day). Stopping on
+  # the wall clock instead would return an unproven incumbent, i.e. a result
+  # that depends on machine load.
+  solver_time_limit_s: 60
   greedy_max_passes: 6
+  # CP-SAT's parallel portfolio is non-deterministic even with a fixed random
+  # seed. 1 worker = fully reproducible runs; raise it to trade that for speed.
+  solver_workers: 1
   # Re-timing a schedule is a single-day problem: capacity windows, curfew and
   # turnaround all live within one operating day. null = busiest day loaded.
   day: null

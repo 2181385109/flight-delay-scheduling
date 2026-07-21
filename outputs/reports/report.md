@@ -5,7 +5,7 @@
 | Metric | Definition | Result | Target | Baseline | Status |
 |---|---|---|---|---|---|
 | High-risk capture (Recall) | L4/L5 recall vs `is_delayed15` (test) | **0.664** (P=0.344, F1=0.453) | ≥ 0.80 | rule 0.161 | MISS — reaching 0.80 needs 0.58 of flights flagged |
-| Constraint satisfaction | satisfied / total constraints (CP-SAT) | **0.990** (cap.viol 77→15) | ≥ 0.85 | greedy 0.981 | PASS |
+| Constraint satisfaction | satisfied / total constraints (CP-SAT) | **0.997** (cap.viol 77→5) | ≥ 0.85 | greedy 0.981 | PASS |
 | High-risk delay reduction | mean Δdelay/flight (CP-SAT) | **0.48 min** (11.7→11.2) | ≥ 1.0 min | greedy 0.45 | MISS |
 | Prediction error (MAE) | test-set MAE, minutes | **12.62** | lower is better | median 13.82 / RF 19.00 / mean 19.90 | PASS |
 
@@ -45,5 +45,5 @@
 | Solver | High-risk mean delay | Δ reduction | Satisfaction | Capacity violations |
 |---|---|---|---|---|
 | before | 11.67 | - | 0.947 | 77 |
-| cpsat | 11.19 | 0.48 | 0.990 | 15 |
+| cpsat | 11.19 | 0.48 | 0.997 | 5 |
 | greedy | 11.21 | 0.45 | 0.981 | 28 |

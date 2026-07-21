@@ -46,6 +46,11 @@ class ProjectPaths:
         return self.data_processed / "predictions.parquet"
 
     @property
+    def test_predictions_parquet(self) -> Path:
+        """Final-model predictions on the held-out test split (matches report.md)."""
+        return self.data_processed / "test_predictions.parquet"
+
+    @property
     def graded_parquet(self) -> Path:
         return self.data_processed / "graded.parquet"
 

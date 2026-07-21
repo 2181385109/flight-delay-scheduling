@@ -27,7 +27,7 @@ independently.
 | Metric | Definition | Result | Target | Baseline | Status |
 |---|---|---|---|---|---|
 | High-risk capture (Recall) | L4/L5 recall vs `is_delayed15` (test) | **0.664** (P=0.344, F1=0.453) | ≥ 0.80 | rule 0.161 | MISS — reaching 0.80 needs 0.58 of flights flagged |
-| Constraint satisfaction | satisfied / total constraints (CP-SAT) | **0.990** (cap.viol 77→15) | ≥ 0.85 | greedy 0.981 | PASS |
+| Constraint satisfaction | satisfied / total constraints (CP-SAT) | **0.997** (cap.viol 77→5) | ≥ 0.85 | greedy 0.981 | PASS |
 | High-risk delay reduction | mean Δdelay/flight (CP-SAT) | **0.48 min** (11.7→11.2) | ≥ 1.0 min | greedy 0.45 | MISS |
 | Prediction error (MAE) | test-set MAE, minutes | **12.62** | lower is better | median 13.82 / RF 19.00 / mean 19.90 | PASS |
 
@@ -229,6 +229,26 @@ Every stochastic step reads the global `seed`; all tunables live in
 `config.yaml` (data source and months, prediction horizon, feature parameters,
 Optuna search space, schedule constraints, metric targets). No magic numbers in
 the modules.
+
+Two details that reproducibility actually depends on:
+
+- **The scheduling optimum is non-degenerate, so its metrics are stable.** The
+  objective originally penalised only the *total excess departures*, while the
+  report counted *breached windows* — two different quantities. Identical-cost
+  solutions could therefore spread the same excess over a different number of
+  windows, and the reported violation count varied run to run even though the
+  objective, the model and the inputs were bit-identical. The breached-window
+  count is now penalised too (`schedule.capacity_window_penalty`), which both
+  removes the ambiguity and yields a better schedule (same excess concentrated
+  in far fewer windows). Two supporting settings: `solver_time_limit_s` is long
+  enough to *prove* optimality — stopping on the wall clock would return an
+  unproven incumbent that depends on machine load — and `solver_workers: 1`
+  keeps the search itself deterministic.
+- **Figures and tables come from the same predictions.** The classifier figure
+  is drawn from the final model's held-out test predictions
+  (`data/processed/test_predictions.parquet`) — the exact numbers in
+  `report.md`. Out-of-fold predictions are kept separately and used only for
+  risk grading; each artifact states which set it came from.
 
 ## License
 MIT — see [LICENSE](LICENSE).

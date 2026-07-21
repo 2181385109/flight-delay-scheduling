@@ -74,9 +74,17 @@ class ScheduleConfig:
     weight_high_risk: float = 5.0
     weight_normal: float = 1.0
     capacity_penalty: float = 8.0
+    # Secondary penalty on the *number* of over-capacity windows. Without it the
+    # optimum is degenerate: the same total excess can be spread over a
+    # different number of windows at identical cost, so the reported violation
+    # count would vary between runs.
+    capacity_window_penalty: float = 2.0
     only_high_risk: bool = True
     solver_time_limit_s: int = 25
     greedy_max_passes: int = 6
+    # CP-SAT's parallel portfolio is non-deterministic even with a fixed seed,
+    # so the default is a single worker: reproducibility beats a second or two.
+    solver_workers: int = 1
     # Which operating day to re-time (ISO date). ``None`` picks the busiest day
     # in the loaded window. Scheduling is inherently a single-day problem.
     day: str | None = None

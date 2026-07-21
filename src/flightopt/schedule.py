@@ -282,6 +282,28 @@ def _evaluate(p: ScheduleProblem, off: np.ndarray, cfg: Config) -> dict:
     return {**delay_report(p, off), **constraint_report(p, off, cfg)}
 
 
+def _trace_entry(step: int, ev: dict, cfg: Config) -> dict:
+    """One convergence point.
+
+    ``objective`` is what the solver actually minimizes (weighted delay *plus*
+    the capacity penalties). Plotting the delay component alone is misleading:
+    it can rise while the solver trades a little delay for far fewer breached
+    capacity windows.
+    """
+    objective = (
+        ev["weighted_total_delay"]
+        + cfg.schedule.capacity_penalty * ev["capacity_excess_departures"]
+        + cfg.schedule.capacity_window_penalty * ev["capacity_violations"]
+    )
+    return {
+        "step": step,
+        "objective": float(objective),
+        "weighted_total_delay": ev["weighted_total_delay"],
+        "high_risk_mean_delay": ev["high_risk_mean_delay"],
+        "satisfaction_rate": ev["satisfaction_rate"],
+    }
+
+
 # ---------------------------------------------------------------------------
 # CP-SAT solver.
 # ---------------------------------------------------------------------------
@@ -339,7 +361,8 @@ def optimize_cpsat(p: ScheduleProblem, cfg: Config) -> tuple[np.ndarray, list[di
             fixed_count[(p.origin[i], p.dep_min[i] // window)] += 1
 
     excess_terms = []
-    all_bins = set(bins) | set(fixed_count)
+    over_terms = []
+    all_bins = sorted(set(bins) | set(fixed_count))  # sorted => stable model build
     for b in all_bins:
         members = bins.get(b, [])
         base = fixed_count.get(b, 0)
@@ -348,6 +371,15 @@ def optimize_cpsat(p: ScheduleProblem, cfg: Config) -> tuple[np.ndarray, list[di
         exc = model.NewIntVar(0, len(members) + base, f"exc_{b[0]}_{b[1]}")
         model.Add(exc >= sum(members) + base - cap)
         excess_terms.append(exc)
+        # over <=> the window breaches capacity at all. Penalising this as well
+        # as the excess makes the reported violation count part of the objective
+        # instead of an arbitrary choice between equally-optimal solutions.
+        over = model.NewBoolVar(f"over_{b[0]}_{b[1]}")
+        # One-sided big-M indicator: exc >= 1 forces over = 1, while the
+        # positive penalty in the objective drives over back to 0 when exc = 0.
+        # Much cheaper for the solver than a fully reified pair of constraints.
+        model.Add(exc <= (len(members) + base) * over)
+        over_terms.append(over)
 
     # Objective.
     obj = []
@@ -360,11 +392,15 @@ def optimize_cpsat(p: ScheduleProblem, cfg: Config) -> tuple[np.ndarray, list[di
                 obj.append(coef * x[(i, o)])
     pen = int(round(cfg.schedule.capacity_penalty * _SCALE))
     obj.extend(pen * e for e in excess_terms)
+    wpen = int(round(cfg.schedule.capacity_window_penalty * _SCALE))
+    obj.extend(wpen * o for o in over_terms)
     model.Minimize(sum(obj))
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = float(cfg.schedule.solver_time_limit_s)
-    solver.parameters.num_search_workers = 8
+    # A single worker keeps the search deterministic (the parallel portfolio is
+    # not reproducible even with a fixed seed).
+    solver.parameters.num_search_workers = int(cfg.schedule.solver_workers)
     solver.parameters.random_seed = cfg.seed
     cb = _TraceCallback(off_vars)
     status = solver.Solve(model, cb)
@@ -398,15 +434,7 @@ def _snapshots_to_trace(p: ScheduleProblem, snapshots, cfg: Config) -> list[dict
         off = np.zeros(p.n, dtype=int)
         for i, o in snap.items():
             off[i] = o
-        ev = _evaluate(p, off, cfg)
-        trace.append(
-            {
-                "step": k,
-                "weighted_total_delay": ev["weighted_total_delay"],
-                "high_risk_mean_delay": ev["high_risk_mean_delay"],
-                "satisfaction_rate": ev["satisfaction_rate"],
-            }
-        )
+        trace.append(_trace_entry(k, _evaluate(p, off, cfg), cfg))
     return trace
 
 
@@ -475,15 +503,7 @@ def optimize_greedy(p: ScheduleProblem, cfg: Config) -> tuple[np.ndarray, list[d
                 counts[(p.origin[i], (p.dep_min[i] + best_o) // window)] += 1
                 off[i] = best_o
                 improved = True
-        ev = _evaluate(p, off, cfg)
-        trace.append(
-            {
-                "step": _pass,
-                "weighted_total_delay": ev["weighted_total_delay"],
-                "high_risk_mean_delay": ev["high_risk_mean_delay"],
-                "satisfaction_rate": ev["satisfaction_rate"],
-            }
-        )
+        trace.append(_trace_entry(_pass, _evaluate(p, off, cfg), cfg))
         if not improved:
             break
 

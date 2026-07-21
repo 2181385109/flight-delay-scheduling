@@ -269,6 +269,20 @@ def run_training(cfg: Config, df: pd.DataFrame) -> dict:
         | (test_df["prev_leg_delay"].to_numpy() > rb["prev_leg_delay_threshold"])
     ).astype(int)
 
+    # Persist the FINAL model's test-split predictions so the figures and the
+    # metrics report are computed from exactly the same numbers. (The
+    # out-of-fold frame below serves a different purpose -- risk grading over
+    # the whole dataset -- and the two must not be confused.)
+    pd.DataFrame(
+        {
+            "flight_id": test_df["flight_id"].to_numpy(),
+            "dep_delay": yr_te.to_numpy(),
+            "is_delayed15": yc_te.to_numpy(),
+            "pred_delay": lgbm_reg_pred,
+            "pred_proba": lgbm_clf_proba,
+        }
+    ).to_parquet(cfg.paths.test_predictions_parquet, index=False)
+
     # Out-of-fold predictions over the whole dataset (honest, distribution-
     # representative) + GroupKFold(tail_id) generalization metrics in one pass.
     oof_delay, oof_proba, cv_metrics = _oof_and_cv(cfg, df, best_reg, best_clf)

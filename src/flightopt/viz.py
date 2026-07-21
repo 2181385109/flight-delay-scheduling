@@ -64,19 +64,20 @@ def plot_risk_levels(graded: pd.DataFrame, cfg: Config, path) -> None:
     _save(fig, path)
 
 
-def plot_classification_eval(preds: pd.DataFrame, path) -> None:
-    test = preds[preds["split"] == "test"]
-    y, proba = test["is_delayed15"].to_numpy(), test["pred_proba"].to_numpy()
+def plot_classification_eval(preds: pd.DataFrame, path, source: str) -> None:
+    """Classifier evaluation. ``source`` names which predictions these are, so
+    the figure can never be mistaken for a differently-computed table."""
+    y, proba = preds["is_delayed15"].to_numpy(), preds["pred_proba"].to_numpy()
     y_pred = (proba >= 0.5).astype(int)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4))
     cm = confusion_matrix(y, y_pred, labels=[0, 1])
     ConfusionMatrixDisplay(cm, display_labels=["on-time", "delayed>15"]).plot(
         ax=ax1, colorbar=False, cmap="Blues"
     )
-    ax1.set_title("Confusion matrix (test)")
+    ax1.set_title(f"Confusion matrix @0.5 — {source}")
     prec, rec, _ = precision_recall_curve(y, proba)
     ax2.plot(rec, prec, color=_NORMAL_COLOR)
-    ax2.set(xlabel="Recall", ylabel="Precision", title="Precision-Recall curve (test)")
+    ax2.set(xlabel="Recall", ylabel="Precision", title=f"Precision-Recall — {source}")
     ax2.grid(alpha=0.3)
     _save(fig, path)
 
@@ -112,11 +113,13 @@ def plot_convergence(trace: dict, path) -> None:
         if not tr:
             continue
         steps = [t["step"] for t in tr]
-        delay = [t["weighted_total_delay"] for t in tr]
+        # Plot the quantity actually being minimized. The delay component alone
+        # can rise while the solver buys a large drop in capacity violations.
+        obj = [t.get("objective", t["weighted_total_delay"]) for t in tr]
         sat = [t["satisfaction_rate"] for t in tr]
-        ax1.plot(steps, delay, style, color=_NORMAL_COLOR, label=f"{solver} weighted delay")
+        ax1.plot(steps, obj, style, color=_NORMAL_COLOR, label=f"{solver} objective")
         ax2.plot(steps, sat, style, color=_HR_COLOR, label=f"{solver} satisfaction")
-    ax1.set(xlabel="Solver step", ylabel="Weighted total delay (min)")
+    ax1.set(xlabel="Solver step", ylabel="Objective (weighted delay + capacity penalty)")
     ax2.set_ylabel("Constraint satisfaction rate")
     ax1.legend(loc="upper right", fontsize=8)
     ax1.set_title("Optimization convergence")
@@ -260,9 +263,21 @@ def run_viz(cfg: Config) -> list[str]:
                                     "Regressor feature importance (gain)")
             produced.append("feature_importance.png")
 
-    if cfg.paths.predictions_parquet.exists():
-        preds = pd.read_parquet(cfg.paths.predictions_parquet)
-        plot_classification_eval(preds, fig_dir / "classification_eval.png")
+    # Prefer the final-model test predictions so this figure matches report.md
+    # exactly; fall back to the out-of-fold frame (clearly labelled) if absent.
+    if cfg.paths.test_predictions_parquet.exists():
+        plot_classification_eval(
+            pd.read_parquet(cfg.paths.test_predictions_parquet),
+            fig_dir / "classification_eval.png",
+            "held-out test (final model)",
+        )
+        produced.append("classification_eval.png")
+    elif cfg.paths.predictions_parquet.exists():
+        oof = pd.read_parquet(cfg.paths.predictions_parquet)
+        plot_classification_eval(
+            oof[oof["split"] == "test"], fig_dir / "classification_eval.png",
+            "out-of-fold",
+        )
         produced.append("classification_eval.png")
 
     if cfg.paths.graded_parquet.exists():
