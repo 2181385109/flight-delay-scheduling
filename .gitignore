@@ -12,7 +12,7 @@ dist/
 .ruff_cache/
 .ipynb_checkpoints/
 
-# --- Data (regenerated from the synthetic generator) ---
+# --- Data (re-fetched with `flightopt fetch-data`) ---
 data/raw/*
 !data/raw/.gitkeep
 data/processed/*

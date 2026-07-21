@@ -26,5 +26,5 @@ jobs:
       - name: Lint (ruff)
         run: ruff check .
 
-      - name: Run tests (synthetic data smoke pipeline)
+      - name: Run tests (real-data smoke pipeline)
         run: pytest -q
