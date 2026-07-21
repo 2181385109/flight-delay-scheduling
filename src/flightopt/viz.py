@@ -128,19 +128,13 @@ def plot_shap_summary(cfg: Config, path) -> bool:
     try:
         import shap
 
-        from flightopt.data import synth
+        from flightopt.data import loader
         from flightopt.features import build_features
         from flightopt.predict import ModelBundle
 
         bundle = ModelBundle.load(cfg)
-        flights = synth.load_or_generate(cfg)
-        X, _, _, _ = build_features(
-            flights,
-            weather_cfg=bundle.weather_cfg or cfg.synth.weather,
-            weather_weights=bundle.weather_weights or cfg.synth.weather_severity_weights,
-            features_cfg=cfg.features,
-            fit_stats=bundle.stats,
-        )
+        flights = loader.load_flights(cfg)
+        X, _, _, _ = build_features(flights, cfg, bundle.stats)
         Xs = X.sample(n=min(400, len(X)), random_state=cfg.seed)
         explainer = shap.TreeExplainer(bundle.lgbm_clf)
         sv = explainer.shap_values(Xs)
@@ -247,13 +241,13 @@ def run_viz(cfg: Config) -> list[str]:
     """Produce every figure from the persisted artifacts; returns file paths."""
     import json
 
-    from flightopt.data import synth
+    from flightopt.data import loader
 
     cfg.paths.ensure()
     fig_dir = cfg.paths.figures
     produced: list[str] = []
 
-    flights = synth.load_or_generate(cfg)
+    flights = loader.load_flights(cfg)
     plot_delay_distribution(flights, fig_dir / "delay_distribution.png")
     produced.append("delay_distribution.png")
 

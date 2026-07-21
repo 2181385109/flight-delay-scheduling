@@ -17,7 +17,7 @@ import pandas as pd
 import streamlit as st
 
 from flightopt.config import load_config
-from flightopt.data import synth
+from flightopt.data import loader
 from flightopt.evaluate import run_evaluate
 from flightopt.predict import run_training
 from flightopt.risk import run_grading
@@ -27,13 +27,10 @@ from flightopt.viz import run_viz
 st.set_page_config(page_title="Flight Delay & Scheduling", page_icon="✈️", layout="wide")
 
 
-def _cfg(trials: int, capacity: int, weather_mult: float, solver: str):
+def _cfg(trials: int, capacity: int, months: list[int], horizon: int):
     return load_config(
         overrides={
-            "synth": {"coeffs": {
-                "a0": -10.0, "a1": 21.0 * weather_mult, "a2": 15.0, "a3": 5.0,
-                "a4": 12.0 * weather_mult, "a5": 0.70, "sigma": 4.5,
-            }},
+            "data": {"months": months, "prediction_horizon_min": horizon},
             "predict": {"optuna_trials": trials},
             "schedule": {"runway_capacity": capacity},
         }
@@ -45,22 +42,24 @@ def _load_json(path: Path) -> dict:
 
 
 st.title("✈️ Flight Delay Prediction & Intelligent Scheduling")
-st.caption("A decoupled predict → grade → schedule closed loop "
-           "(LightGBM · quantile risk grading · OR-Tools CP-SAT).")
+st.caption("Real 2013 NYC departures (US DOT/BTS) · decoupled predict → grade → "
+           "schedule loop (LightGBM · quantile risk grading · OR-Tools CP-SAT).")
 
 with st.sidebar:
     st.header("Controls")
+    months = st.multiselect("Months of 2013", list(range(1, 13)), default=[1, 2, 3])
+    horizon = st.slider("Prediction horizon (min before departure)", 30, 180, 60, 15,
+                        help="Network-state features may only use data older than this")
     trials = st.slider("Optuna trials", 5, 60, 15, help="Fewer = faster")
-    capacity = st.slider("Runway capacity (per airport / 15-min)", 2, 10, 5)
-    weather_mult = st.slider("Weather intensity ×", 0.5, 2.0, 1.0, 0.1)
+    capacity = st.slider("Runway capacity (per airport / 15-min)", 2, 20, 8)
     solver = st.selectbox("Scheduler", ["cpsat", "greedy"])
     run = st.button("▶ Run full pipeline", type="primary", use_container_width=True)
 
-cfg = _cfg(trials, capacity, weather_mult, solver)
+cfg = _cfg(trials, capacity, months or [1], horizon)
 
 if run:
-    prog = st.progress(0.0, text="Generating data…")
-    df = synth.load_or_generate(cfg, force=True)
+    prog = st.progress(0.0, text="Loading real flight data…")
+    df = loader.load_flights(cfg, force=True)
     prog.progress(0.2, text="Training models…")
     run_training(cfg, df)
     prog.progress(0.55, text="Grading risk…")

@@ -1,1 +1,1 @@
-"""Data layer: synthetic flight generator (primary) + public loader (optional)."""
+"""Data layer: real flight-data loading (nycflights13 + generic CSV adapter)."""

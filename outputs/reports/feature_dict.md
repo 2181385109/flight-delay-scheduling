@@ -1,19 +1,24 @@
 # Feature dictionary
 
-7 core + 3 interaction features (plus native categoricals). Every feature uses planning-time information only; target-derived statistics are fit on the training split to prevent leakage.
+Features are grouped by **leakage policy**, which is the thing that matters most on real data:
+
+* **planning** — known well ahead of departure (timetable, forecast, calendar).
+* **network state** — realized delays of flights that already departed, strictly lagged by the prediction horizon (default 60 min), i.e. exactly what an operator knows one hour out.
+* **target encoding** — aggregates the label, therefore fit on TRAINING rows only (re-fit inside each CV fold) and smoothed toward the global mean.
 
 | Feature | Kind | Definition & motivation |
 |---|---|---|
-| `weather_severity` | core | Normalized weighted composite of low visibility, wind, precipitation and thunder in [0,1]. Primary meteorological driver of delay. |
-| `dep_hour_sin / dep_hour_cos` | core | Cyclical (sin/cos) encoding of the scheduled departure hour so 23:00 and 00:00 are adjacent. |
-| `is_peak` | core | 1 if the departure hour is in a configured peak window (morning/evening). Interacts non-linearly with weather and congestion. |
-| `time_bucket` | core (categorical) | Coarse part-of-day label (early/morning_peak/midday/evening_peak/night). |
-| `airport_congestion` | core | Scheduled departures at the origin within +/-30 min, min-max normalized with train-only bounds. Planning information only -> leakage-free. |
-| `carrier_ontime_rate` | core | Historical on-time rate of the carrier, fit on the TRAIN split only (per-fold in CV) with a global-mean fallback -> no target leakage. |
-| `distance / sched_duration` | core | Great-circle-style leg distance (km) and scheduled block time (min). |
-| `day_of_week / is_weekend / is_holiday` | core (calendar) | Calendar effects on demand and delay propagation. |
-| `prev_leg_delay` | core | Departure delay of the previous leg of the same tail (0 for the first leg). The main delay-propagation signal. |
-| `wsev_x_peak` | interaction | weather_severity x is_peak: bad weather hurts far more during peaks. |
-| `cong_x_peak` | interaction | airport_congestion x is_peak: congestion bites hardest at peak times. |
-| `prevdelay_x_slack` | interaction | prev_leg_delay x turnaround_slack: slack (scheduled turnaround minus the minimum) absorbs inherited delay. |
+| `weather_severity` | planning | Normalized composite of low visibility, wind and precipitation in [0,1]. |
+| `vis / wind / precip / temp / humid / wind_gust / pressure` | planning | Raw hourly weather observed at the origin airport. Temperature/humidity/pressure matter for winter icing and de-icing delays. |
+| `dep_hour_sin / dep_hour_cos / is_peak / time_bucket` | planning | Cyclical departure-hour encoding plus peak-window flag and part-of-day. |
+| `airport_congestion` | planning | Scheduled departures at the origin within +/-30 min, min-max normalized with train-only bounds. Uses the timetable only, never realized delays. |
+| `distance / sched_duration` | planning | Leg distance (km) and scheduled block time. |
+| `day_of_week / is_weekend / is_holiday` | planning | Calendar effects, using the real US federal holiday list for the data year. |
+| `turnaround_slack / leg_index` | planning | Scheduled turnaround minus the minimum, and how many legs the aircraft has already flown that day. |
+| `airport_delay_state` | network state | Mean realized departure delay at this airport over a 3-hour window ending one hour before scheduled departure. The strongest real signal: a backed-up airport stays backed up. Strictly causal. |
+| `airport_recent_flights` | network state | How many departures fed that window -- distinguishes a quiet airport from a busy one with the same mean delay. |
+| `carrier_delay_state` | network state | Same lagged statistic for the carrier's whole network, capturing airline-wide disruption. |
+| `prev_leg_delay` | network state | Departure delay of the same aircraft's previous leg that day (0 for the first leg) -- direct delay propagation. |
+| `carrier_delay_rate / route_delay_rate / tail_delay_rate / origin_hour_delay_rate` | target encoding | Historical P(delay>15) by carrier, route, aircraft and origin-hour. Fit on TRAIN rows only (re-fit per CV fold) and smoothed toward the global mean so rare keys cannot memorise their own label. |
+| `wsev_x_peak / cong_x_peak / prevdelay_x_slack` | interaction | Weather and congestion bite hardest at peak; slack absorbs inherited delay. |
 | `airline / origin / dest / aircraft_type` | categorical | Handled natively by LightGBM (one-hot for the RandomForest baseline). |

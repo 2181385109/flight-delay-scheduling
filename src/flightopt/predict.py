@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import joblib
@@ -66,8 +66,6 @@ class ModelBundle:
     rf_columns: list[str]
     best_params_reg: dict
     best_params_clf: dict
-    weather_cfg: dict = field(default_factory=dict)
-    weather_weights: dict = field(default_factory=dict)
 
     def save(self, cfg: Config) -> None:
         cfg.paths.ensure()
@@ -82,13 +80,7 @@ class ModelBundle:
 # Feature helpers bound to a config.
 # ---------------------------------------------------------------------------
 def _features(cfg: Config, df: pd.DataFrame, fit_stats: dict | None):
-    return build_features(
-        df,
-        weather_cfg=cfg.synth.weather,
-        weather_weights=cfg.synth.weather_severity_weights,
-        features_cfg=cfg.features,
-        fit_stats=fit_stats,
-    )
+    return build_features(df, cfg, fit_stats)
 
 
 def time_split(df: pd.DataFrame, test_size: float) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -121,6 +113,16 @@ def _base_lgbm_kwargs(cfg: Config) -> dict:
     }
 
 
+def _reg_kwargs(cfg: Config) -> dict:
+    """Regressor kwargs with an **L1 objective**.
+
+    Real departure delays are heavy-tailed (a handful of multi-hour outliers).
+    An L2 objective chases those outliers and can lose to a constant predictor
+    on MAE; matching the training loss to the reported metric fixes that.
+    """
+    return {**_base_lgbm_kwargs(cfg), "objective": "regression_l1"}
+
+
 def _fit_lgbm(model, X_tr, y_tr, X_val, y_val, eval_metric: str, rounds: int):
     model.fit(
         X_tr,
@@ -144,7 +146,7 @@ def _fit_reg_clf(cfg: Config, X_tr, yr_tr, yc_tr, best_reg: dict, best_clf: dict
         Xi, Xv = X_tr.iloc[:cut], X_tr.iloc[cut:]
         yri, yrv = yr_tr.iloc[:cut], yr_tr.iloc[cut:]
         yci, ycv = yc_tr.iloc[:cut], yc_tr.iloc[cut:]
-    reg = LGBMRegressor(**{**_base_lgbm_kwargs(cfg), **best_reg})
+    reg = LGBMRegressor(**{**_reg_kwargs(cfg), **best_reg})
     _fit_lgbm(reg, Xi, yri, Xv, yrv, "l1", rounds)
     clf = LGBMClassifier(**{**_base_lgbm_kwargs(cfg), **best_clf})
     _fit_lgbm(clf, Xi, yci, Xv, ycv, "binary_logloss", rounds)
@@ -182,7 +184,7 @@ def _optuna_search(
         scores = []
         for X_tr, yr_tr, yc_tr, X_va, yr_va, yc_va in prepared:
             if task == "reg":
-                model = LGBMRegressor(**params)
+                model = LGBMRegressor(**{**params, "objective": "regression_l1"})
                 _fit_lgbm(model, X_tr, yr_tr, X_va, yr_va, "l1", rounds)
                 scores.append(mean_absolute_error(yr_va, model.predict(X_va)))
             else:
@@ -258,6 +260,9 @@ def run_training(cfg: Config, df: pd.DataFrame) -> dict:
     rf_clf_proba = rf_clf.predict_proba(Xoh_te)[:, 1]
 
     mean_pred = np.full(len(yr_te), float(yr_tr.mean()))
+    # The median is the optimal *constant* predictor under MAE, so it is the
+    # honest strong baseline to beat on a heavy-tailed target.
+    median_pred = np.full(len(yr_te), float(yr_tr.median()))
     rb = cfg.predict.rule_baseline
     rule_pred_clf = (
         (test_df["weather_severity"].to_numpy() > rb["weather_severity_threshold"])
@@ -273,6 +278,7 @@ def run_training(cfg: Config, df: pd.DataFrame) -> dict:
             "lightgbm": _reg_metrics(yr_te, lgbm_reg_pred),
             "random_forest": _reg_metrics(yr_te, rf_reg_pred),
             "mean_baseline": _reg_metrics(yr_te, mean_pred),
+            "median_baseline": _reg_metrics(yr_te, median_pred),
         },
         "classification": {
             "lightgbm": _clf_metrics(yc_te, lgbm_clf_proba),
@@ -320,8 +326,6 @@ def run_training(cfg: Config, df: pd.DataFrame) -> dict:
         rf_columns=list(Xoh_tr.columns),
         best_params_reg=best_reg,
         best_params_clf=best_clf,
-        weather_cfg=dict(cfg.synth.weather),
-        weather_weights=dict(cfg.synth.weather_severity_weights),
     )
     bundle.save(cfg)
     write_feature_dict(cfg.paths.feature_dict_md)
@@ -376,13 +380,7 @@ def _feature_importance(lgbm_reg, lgbm_clf) -> dict:
 
 def predict(bundle: ModelBundle, cfg: Config, df: pd.DataFrame) -> dict:
     """Predict delay + risk probability for arbitrary flights using a bundle."""
-    X, _, _, _ = build_features(
-        df,
-        weather_cfg=bundle.weather_cfg or cfg.synth.weather,
-        weather_weights=bundle.weather_weights or cfg.synth.weather_severity_weights,
-        features_cfg=cfg.features,
-        fit_stats=bundle.stats,
-    )
+    X, _, _, _ = build_features(df, cfg, bundle.stats)
     return {
         "delay": bundle.lgbm_reg.predict(X),
         "risk_proba": bundle.lgbm_clf.predict_proba(X)[:, 1],

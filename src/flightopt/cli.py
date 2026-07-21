@@ -1,6 +1,6 @@
 """Command-line interface (Typer).
 
-    python -m flightopt gen-data
+    python -m flightopt fetch-data
     python -m flightopt train [--trials N]
     python -m flightopt grade
     python -m flightopt schedule [--solver cpsat|greedy]
@@ -31,24 +31,26 @@ def _load(config: str | None, seed: int | None = None, overrides: dict | None = 
     return load_config(config, overrides=ov or None)
 
 
-@app.command("gen-data")
-def gen_data(
+@app.command("fetch-data")
+def fetch_data(
     config: str = typer.Option(None, help="Path to config.yaml"),
     seed: int = typer.Option(None, help="Override the global seed"),
-    force: bool = typer.Option(True, help="Regenerate even if cached"),
+    force: bool = typer.Option(True, help="Re-fetch even if already cached"),
 ):
-    """Generate the synthetic flight dataset."""
-    from flightopt.data import synth
+    """Load the real flight dataset into the unified schema (cached to parquet)."""
+    from flightopt.data import loader
 
     cfg = _load(config, seed)
     t0 = time.time()
-    df = synth.load_or_generate(cfg, force=force)
-    s = synth.summarize(df)
-    typer.echo(f"Generated {s['n_flights']} flights / {s['n_tails']} tails "
+    df = loader.load_flights(cfg, force=force)
+    s = loader.summarize(df)
+    typer.echo(f"Loaded {s['n_flights']:,} REAL flights / {s['n_tails']:,} aircraft "
                f"-> {cfg.paths.flights_parquet}")
-    typer.echo(f"  positive rate (is_delayed15): {s['positive_rate']:.3f}")
-    typer.echo(f"  corr(weather/congestion/prev_leg vs delay): "
-               f"{s['corr_weather']:.2f} / {s['corr_congestion']:.2f} / {s['corr_prev_leg']:.2f}")
+    typer.echo(f"  source : {cfg.data.source} {cfg.data.year}, months={list(cfg.data.months)}")
+    typer.echo(f"  window : {s['date_min']} .. {s['date_max']}")
+    typer.echo(f"  carriers {s['n_carriers']} | airports {s['n_airports']}")
+    typer.echo(f"  delayed>15min: {s['positive_rate']:.3f} | mean {s['mean_dep_delay']:.1f} min "
+               f"| max {s['max_dep_delay']:.0f} min")
     typer.echo(f"  done in {time.time() - t0:.2f}s")
 
 
@@ -59,13 +61,13 @@ def train(
     trials: int = typer.Option(None, help="Override Optuna trials"),
 ):
     """Train the LightGBM double-head (+ baselines) with Optuna tuning."""
-    from flightopt.data import synth
+    from flightopt.data import loader
     from flightopt.predict import run_training
 
     ov = {"predict": {"optuna_trials": trials}} if trials else None
     cfg = _load(config, seed, ov)
     t0 = time.time()
-    df = synth.load_or_generate(cfg)
+    df = loader.load_flights(cfg)
     m = run_training(cfg, df)
     reg = m["regression"]
     clf = m["classification"]
@@ -153,8 +155,8 @@ def run_all(
     trials: int = typer.Option(None, help="Override Optuna trials"),
     solver: str = typer.Option("cpsat", help="Scheduling solver"),
 ):
-    """Run the full pipeline: gen-data -> train -> grade -> schedule -> evaluate -> viz."""
-    from flightopt.data import synth
+    """Run the full pipeline: fetch-data -> train -> grade -> schedule -> evaluate -> viz."""
+    from flightopt.data import loader
     from flightopt.evaluate import headline_table, run_evaluate
     from flightopt.predict import run_training
     from flightopt.risk import run_grading
@@ -165,8 +167,8 @@ def run_all(
     cfg = _load(config, seed, ov)
     t0 = time.time()
 
-    typer.echo("==> [1/6] generating data")
-    df = synth.load_or_generate(cfg, force=True)
+    typer.echo("==> [1/6] loading real flight data")
+    df = loader.load_flights(cfg, force=True)
     typer.echo("==> [2/6] training models")
     run_training(cfg, df)
     typer.echo("==> [3/6] grading risk")

@@ -2,259 +2,306 @@
   "headline": {
     "high_risk_capture_recall": {
       "definition": "Recall of the high-risk (L4/L5) grade vs is_delayed15 on the held-out test split.",
-      "value": 0.8292682926829268,
-      "precision": 0.5862068965517241,
-      "f1": 0.6868686868686869,
+      "value": 0.663571649644073,
+      "precision": 0.34425176621708414,
+      "f1": 0.4533248757796807,
       "target": 0.8,
-      "baseline_rule_recall": 0.43089430894308944,
-      "pass": true
+      "baseline_rule_recall": 0.1612503868771278,
+      "pass": false,
+      "operating_point": {
+        "target_recall": 0.8,
+        "flag_rate_for_target_recall": 0.5808701215611004,
+        "current_flag_rate": 0.3984644913627639,
+        "current_recall": 0.663571649644073
+      }
     },
     "constraint_satisfaction_rate": {
       "definition": "Satisfied constraints / total (turnaround + curfew + runway-capacity windows) after CP-SAT.",
-      "value": 0.9981358189081225,
-      "capacity_rate": 0.9876543209876543,
-      "capacity_violations_before": 59,
-      "capacity_violations_after": 7,
+      "value": 0.9896623018607856,
+      "capacity_rate": 0.927536231884058,
+      "capacity_violations_before": 77,
+      "capacity_violations_after": 15,
       "target": 0.85,
-      "baseline_greedy": 0.9973375931842385,
+      "baseline_greedy": 0.9806094182825484,
       "pass": true
     },
     "high_risk_delay_reduction_min": {
       "definition": "Mean predicted-delay reduction per high-risk flight (offset 0 -> optimized offset).",
-      "value": 3.041225204901089,
-      "mean_delay_before": 17.27198234450356,
-      "mean_delay_after": 14.230757139602469,
+      "value": 0.47540899907141454,
+      "mean_delay_before": 11.666537010147408,
+      "mean_delay_after": 11.191128011075994,
       "target": 1.0,
-      "baseline_greedy": 2.8152400476125576,
-      "pass": true
+      "baseline_greedy": 0.4529095039729207,
+      "pass": false
     },
     "prediction_error": {
       "definition": "Regression MAE / RMSE on the held-out test split (minutes).",
-      "lightgbm_mae": 3.7445099478776473,
-      "lightgbm_rmse": 4.68553090562731,
-      "random_forest_mae": 3.97909938842798,
-      "mean_baseline_mae": 6.465738461541,
+      "lightgbm_mae": 12.622168710009284,
+      "lightgbm_rmse": 33.51696136255621,
+      "random_forest_mae": 19.002494775005328,
+      "mean_baseline_mae": 19.899794738663346,
+      "median_baseline_mae": 13.820729366602688,
       "beats_baselines": true
     },
     "classification_quality": {
       "definition": "Binary P(delay>15) quality on the test split.",
-      "lightgbm_pr_auc": 0.7736694999355203,
-      "lightgbm_roc_auc": 0.8684511754864842,
-      "random_forest_pr_auc": 0.7255402635802659
+      "lightgbm_pr_auc": 0.48596467623501005,
+      "lightgbm_roc_auc": 0.7268647103133711,
+      "random_forest_pr_auc": 0.48219672127200763
     }
   },
   "prediction": {
     "regression": {
       "lightgbm": {
-        "mae": 3.7445099478776473,
-        "rmse": 4.68553090562731
+        "mae": 12.622168710009284,
+        "rmse": 33.51696136255621
       },
       "random_forest": {
-        "mae": 3.97909938842798,
-        "rmse": 4.8968521738297905
+        "mae": 19.002494775005328,
+        "rmse": 32.47135350838308
       },
       "mean_baseline": {
-        "mae": 6.465738461541,
-        "rmse": 7.942451890913459
+        "mae": 19.899794738663346,
+        "rmse": 35.22162890900826
+      },
+      "median_baseline": {
+        "mae": 13.820729366602688,
+        "rmse": 37.83361052995822
       }
     },
     "classification": {
       "lightgbm": {
-        "precision": 0.7425742574257426,
-        "recall": 0.6097560975609756,
-        "f1": 0.6696428571428571,
-        "pr_auc": 0.7736694999355203,
-        "roc_auc": 0.8684511754864842,
+        "precision": 0.6651665166516652,
+        "recall": 0.22872175796966884,
+        "f1": 0.3403961308152925,
+        "pr_auc": 0.48596467623501005,
+        "roc_auc": 0.7268647103133711,
         "confusion_matrix": {
-          "tn": 251,
-          "fp": 26,
-          "fn": 48,
-          "tp": 75
+          "tn": 12027,
+          "fp": 372,
+          "fn": 2492,
+          "tp": 739
         }
       },
       "random_forest": {
-        "precision": 0.7252747252747253,
-        "recall": 0.5365853658536586,
-        "f1": 0.616822429906542,
-        "pr_auc": 0.7255402635802659,
-        "roc_auc": 0.853687887059376,
+        "precision": 0.6870310825294748,
+        "recall": 0.1983905911482513,
+        "f1": 0.3078770413064361,
+        "pr_auc": 0.48219672127200763,
+        "roc_auc": 0.7406881960933291,
         "confusion_matrix": {
-          "tn": 252,
-          "fp": 25,
-          "fn": 57,
-          "tp": 66
+          "tn": 12107,
+          "fp": 292,
+          "fn": 2590,
+          "tp": 641
         }
       },
       "rule_baseline": {
-        "precision": 0.828125,
-        "recall": 0.43089430894308944,
-        "f1": 0.5668449197860963
+        "precision": 0.6480099502487562,
+        "recall": 0.1612503868771278,
+        "f1": 0.25824039653035935
       }
     },
     "cv_generalization": {
-      "groupkfold_mae_mean": 4.652740737903921,
-      "groupkfold_mae_std": 0.2255816098225779,
-      "groupkfold_pr_auc_mean": 0.7692840832540808,
-      "groupkfold_pr_auc_std": 0.03422871531904049
+      "groupkfold_mae_mean": 12.88098097307261,
+      "groupkfold_mae_std": 0.11725341151499788,
+      "groupkfold_pr_auc_mean": 0.49786947178161695,
+      "groupkfold_pr_auc_std": 0.013901235352369265
     },
-    "n_train": 1600,
-    "n_test": 400,
+    "n_train": 62516,
+    "n_test": 15630,
     "best_params_reg": {
-      "num_leaves": 101,
-      "max_depth": 12,
-      "learning_rate": 0.08699590328968762,
-      "n_estimators": 458,
-      "min_child_samples": 54,
-      "subsample": 0.8002674882929464,
-      "colsample_bytree": 0.7358498144821762,
-      "reg_alpha": 1.6619703101021621e-06,
-      "reg_lambda": 0.6209363552247152
+      "num_leaves": 127,
+      "max_depth": 8,
+      "learning_rate": 0.024339973806445328,
+      "n_estimators": 898,
+      "min_child_samples": 33,
+      "subsample": 0.9292922628861944,
+      "colsample_bytree": 0.9064783980660264,
+      "reg_alpha": 0.0011469287177683291,
+      "reg_lambda": 0.013556249295689405
     },
     "best_params_clf": {
-      "num_leaves": 49,
-      "max_depth": 3,
-      "learning_rate": 0.07766184280392888,
-      "n_estimators": 508,
-      "min_child_samples": 11,
-      "subsample": 0.798070764044508,
-      "colsample_bytree": 0.6137554084460873,
-      "reg_alpha": 0.8131129951713353,
-      "reg_lambda": 1.7828684416997836e-06
+      "num_leaves": 127,
+      "max_depth": 9,
+      "learning_rate": 0.024901727978882997,
+      "n_estimators": 900,
+      "min_child_samples": 35,
+      "subsample": 0.8964036629129385,
+      "colsample_bytree": 0.6968921353028257,
+      "reg_alpha": 0.00041744565445853523,
+      "reg_lambda": 1.4550896866656799e-08
     },
     "feature_importance": {
       "regressor_gain": {
-        "wsev_x_peak": 0.23379576812989258,
-        "prev_leg_delay": 0.20579626680301707,
-        "prevdelay_x_slack": 0.12410538870951011,
-        "weather_severity": 0.10347045748505107,
-        "cong_x_peak": 0.10184275407565441,
-        "airport_congestion": 0.0985357002850954,
-        "turnaround_slack": 0.03555442737652524,
-        "origin": 0.01815733478974154,
-        "sched_duration": 0.01762260330778142,
-        "dep_hour_sin": 0.014084444884152591,
-        "dest": 0.011277532960223666,
-        "distance": 0.009604557680871354,
-        "dep_hour_cos": 0.007362698115787468,
-        "carrier_ontime_rate": 0.007096441173536163,
-        "airline": 0.005294826330345745,
-        "aircraft_type": 0.0031402509122957297,
-        "is_peak": 0.0030854154960402403,
-        "time_bucket": 0.0001731314844782023,
-        "is_weekend": 0.0,
-        "is_holiday": 0.0,
-        "day_of_week": 0.0
+        "dest": 0.17778900075255583,
+        "aircraft_type": 0.10816131789961646,
+        "airport_delay_state": 0.07808877741245382,
+        "tail_delay_rate": 0.07314728628617877,
+        "carrier_delay_state": 0.07068170951054688,
+        "origin_hour_delay_rate": 0.04601326689019142,
+        "airport_recent_flights": 0.038582891464993115,
+        "humid": 0.037538055894553356,
+        "pressure": 0.03688422320216678,
+        "turnaround_slack": 0.0339053961737649,
+        "weather_severity": 0.03193003989291078,
+        "airport_congestion": 0.029177442947343108,
+        "temp": 0.02836607992673945,
+        "sched_duration": 0.022069018114269114,
+        "day_of_week": 0.01876950841439934,
+        "route_delay_rate": 0.018112775293819286,
+        "prev_leg_delay": 0.018080234917716865,
+        "dep_hour_sin": 0.01638509650336791,
+        "wind": 0.013661673756641802,
+        "cong_x_peak": 0.0121023839135689,
+        "prevdelay_x_slack": 0.011665128270204692,
+        "dep_hour_cos": 0.010785365448815613,
+        "wsev_x_peak": 0.010424171868145074,
+        "distance": 0.009988914671893338,
+        "airline": 0.009978490222289796,
+        "wind_gust": 0.007701771839088253,
+        "carrier_delay_rate": 0.005456922836667929,
+        "origin": 0.005379427902164194,
+        "leg_index": 0.004890812573489527,
+        "time_bucket": 0.004381317686999293,
+        "vis": 0.00390066956908302,
+        "precip": 0.003066007630053382,
+        "is_weekend": 0.002126061975238915,
+        "is_holiday": 0.0005912577769271042,
+        "is_peak": 0.00021750056114197826
       },
       "classifier_gain": {
-        "prev_leg_delay": 0.2306179203215648,
-        "wsev_x_peak": 0.19278885486839106,
-        "weather_severity": 0.13575753718090433,
-        "cong_x_peak": 0.12854339713126395,
-        "prevdelay_x_slack": 0.08882043947603833,
-        "airport_congestion": 0.0718139549562378,
-        "dep_hour_sin": 0.05230560829115043,
-        "turnaround_slack": 0.028091817491857872,
-        "sched_duration": 0.02205894230716338,
-        "origin": 0.013204522026764804,
-        "carrier_ontime_rate": 0.012686363549014916,
-        "distance": 0.00969576981623931,
-        "dest": 0.004800992172648851,
-        "dep_hour_cos": 0.003805759589368841,
-        "aircraft_type": 0.0031002231006642495,
-        "is_peak": 0.0014424210174170246,
-        "airline": 0.0004654767033100504,
-        "is_weekend": 0.0,
-        "is_holiday": 0.0,
-        "time_bucket": 0.0,
-        "day_of_week": 0.0
+        "tail_delay_rate": 0.18797865795983815,
+        "carrier_delay_state": 0.15646767046595259,
+        "airport_delay_state": 0.09145464621915902,
+        "dest": 0.0721990409730267,
+        "humid": 0.041238975969909525,
+        "turnaround_slack": 0.04027526058997252,
+        "pressure": 0.037545293666774816,
+        "aircraft_type": 0.032839392109623125,
+        "prev_leg_delay": 0.032230926390721,
+        "temp": 0.028927798036962552,
+        "weather_severity": 0.025920531422278594,
+        "airport_recent_flights": 0.024119293591525592,
+        "airport_congestion": 0.023614403093216833,
+        "origin_hour_delay_rate": 0.020872358130342973,
+        "sched_duration": 0.01857987082246778,
+        "route_delay_rate": 0.018440757375023577,
+        "dep_hour_sin": 0.01775592477984152,
+        "wind": 0.014880372726666135,
+        "prevdelay_x_slack": 0.01260221352900111,
+        "distance": 0.011334515224551114,
+        "day_of_week": 0.011089011216408973,
+        "cong_x_peak": 0.010575744419569242,
+        "dep_hour_cos": 0.009890632194199582,
+        "wsev_x_peak": 0.00885146857049024,
+        "carrier_delay_rate": 0.00816421445578727,
+        "wind_gust": 0.007938498966996756,
+        "origin": 0.007332663017971058,
+        "leg_index": 0.006483224642029879,
+        "precip": 0.0053807849257350125,
+        "vis": 0.004331707207960845,
+        "airline": 0.004186778238786783,
+        "is_weekend": 0.0027872792767830133,
+        "time_bucket": 0.0023606722225762277,
+        "is_holiday": 0.0009106252996851902,
+        "is_peak": 0.0004387922681646538
       }
     }
   },
   "risk": {
     "source": "delay",
     "cutpoints": [
-      2.039193607314718,
-      5.058553504972082,
-      8.75576269199108,
-      12.407427908472975
+      0.022158316844983764,
+      0.25645845248065036,
+      0.8978550513914955,
+      3.7225340235703728
     ],
     "capture_test": {
-      "high_risk_recall": 0.8292682926829268,
-      "high_risk_precision": 0.5862068965517241,
-      "high_risk_f1": 0.6868686868686869,
-      "flagged_rate": 0.435,
-      "positive_rate": 0.3075
+      "high_risk_recall": 0.663571649644073,
+      "high_risk_precision": 0.34425176621708414,
+      "high_risk_f1": 0.4533248757796807,
+      "flagged_rate": 0.3984644913627639,
+      "positive_rate": 0.20671785028790787
     },
     "capture_all": {
-      "high_risk_recall": 0.8232323232323232,
-      "high_risk_precision": 0.6007371007371007,
-      "high_risk_f1": 0.6946022727272727,
-      "flagged_rate": 0.407,
-      "positive_rate": 0.297
+      "high_risk_recall": 0.6658096074250596,
+      "high_risk_precision": 0.3399071554346086,
+      "high_risk_f1": 0.4500540471800089,
+      "flagged_rate": 0.39970056048934044,
+      "positive_rate": 0.20405395029815984
     },
     "capture_proba_test": {
-      "high_risk_recall": 0.8943089430894309,
-      "high_risk_precision": 0.5288461538461539,
-      "high_risk_f1": 0.6646525679758308,
-      "flagged_rate": 0.52,
-      "positive_rate": 0.3075
+      "high_risk_recall": 0.6675951717734447,
+      "high_risk_precision": 0.3529123036649215,
+      "high_risk_f1": 0.46173605908166543,
+      "flagged_rate": 0.3910428662827895,
+      "positive_rate": 0.20671785028790787
+    },
+    "operating_point": {
+      "target_recall": 0.8,
+      "flag_rate_for_target_recall": 0.5808701215611004,
+      "current_flag_rate": 0.3984644913627639,
+      "current_recall": 0.663571649644073
     },
     "rule_baseline_test": {
-      "high_risk_recall": 0.43089430894308944,
-      "high_risk_precision": 0.828125,
-      "high_risk_f1": 0.5668449197860963,
-      "flagged_rate": 0.16
+      "high_risk_recall": 0.1612503868771278,
+      "high_risk_precision": 0.6480099502487562,
+      "high_risk_f1": 0.25824039653035935,
+      "flagged_rate": 0.05143953934740883
     },
     "level_counts": {
-      "1": 399,
-      "2": 385,
-      "3": 402,
-      "4": 385,
-      "5": 429
+      "1": 16052,
+      "2": 15540,
+      "3": 15319,
+      "4": 15648,
+      "5": 15587
     }
   },
   "schedule": {
     "primary_solver": "cpsat",
+    "operating_day": "2013-03-14",
+    "n_flights": 981,
     "comparison": {
       "cpsat": {
         "solver": "cpsat",
         "solver_meta": {
           "status": "OPTIMAL",
-          "solve_time_s": 7.6923241,
-          "objective": 64473.74,
-          "num_solutions": 27
+          "solve_time_s": 0.5632985,
+          "objective": 26800.62,
+          "num_solutions": 3
         },
         "before": {
-          "total_delay": 22109.719281897607,
-          "weighted_total_delay": 78347.29379560119,
-          "mean_delay": 11.054859640948804,
-          "high_risk_mean_delay": 17.27198234450356,
-          "high_risk_mean_delay_before": 17.27198234450356,
+          "total_delay": 5852.7903612350765,
+          "weighted_total_delay": 27505.883052068664,
+          "mean_delay": 5.9661471572223,
+          "high_risk_mean_delay": 11.666537010147408,
+          "high_risk_mean_delay_before": 11.666537010147408,
           "high_risk_delay_reduction": 0.0,
-          "n_high_risk": 814,
-          "satisfaction_rate": 0.9847110650427572,
+          "n_high_risk": 464,
+          "satisfaction_rate": 0.9466019417475728,
           "turnaround_rate": 1.0,
           "curfew_rate": 1.0,
-          "capacity_rate": 0.9120715350223547,
-          "capacity_windows": 671,
-          "capacity_violations": 59,
-          "capacity_excess_departures": 96
+          "capacity_rate": 0.6111111111111112,
+          "capacity_windows": 198,
+          "capacity_violations": 77,
+          "capacity_excess_departures": 236
         },
         "after": {
-          "total_delay": 17962.503009826327,
-          "weighted_total_delay": 64297.84825637197,
-          "mean_delay": 8.981251504913164,
-          "high_risk_mean_delay": 14.230757139602469,
-          "high_risk_mean_delay_before": 17.27198234450356,
-          "high_risk_delay_reduction": 3.041225204901089,
-          "n_high_risk": 814,
-          "satisfaction_rate": 0.9981358189081225,
+          "total_delay": 5613.995039417024,
+          "weighted_total_delay": 26384.728627974066,
+          "mean_delay": 5.722726849558637,
+          "high_risk_mean_delay": 11.191128011075994,
+          "high_risk_mean_delay_before": 11.666537010147408,
+          "high_risk_delay_reduction": 0.47540899907141454,
+          "n_high_risk": 464,
+          "satisfaction_rate": 0.9896623018607856,
           "turnaround_rate": 1.0,
           "curfew_rate": 1.0,
-          "capacity_rate": 0.9876543209876543,
-          "capacity_windows": 567,
-          "capacity_violations": 7,
-          "capacity_excess_departures": 22
+          "capacity_rate": 0.927536231884058,
+          "capacity_windows": 207,
+          "capacity_violations": 15,
+          "capacity_excess_departures": 52
         }
       },
       "greedy": {
@@ -263,36 +310,36 @@
           "passes": 6
         },
         "before": {
-          "total_delay": 22109.719281897607,
-          "weighted_total_delay": 78347.29379560119,
-          "mean_delay": 11.054859640948804,
-          "high_risk_mean_delay": 17.27198234450356,
-          "high_risk_mean_delay_before": 17.27198234450356,
+          "total_delay": 5852.7903612350765,
+          "weighted_total_delay": 27505.883052068664,
+          "mean_delay": 5.9661471572223,
+          "high_risk_mean_delay": 11.666537010147408,
+          "high_risk_mean_delay_before": 11.666537010147408,
           "high_risk_delay_reduction": 0.0,
-          "n_high_risk": 814,
-          "satisfaction_rate": 0.9847110650427572,
+          "n_high_risk": 464,
+          "satisfaction_rate": 0.9466019417475728,
           "turnaround_rate": 1.0,
           "curfew_rate": 1.0,
-          "capacity_rate": 0.9120715350223547,
-          "capacity_windows": 671,
-          "capacity_violations": 59,
-          "capacity_excess_departures": 96
+          "capacity_rate": 0.6111111111111112,
+          "capacity_windows": 198,
+          "capacity_violations": 77,
+          "capacity_excess_departures": 236
         },
         "after": {
-          "total_delay": 18418.095614679714,
-          "weighted_total_delay": 65489.24853335682,
-          "mean_delay": 9.209047807339857,
-          "high_risk_mean_delay": 14.456742296890999,
-          "high_risk_mean_delay_before": 17.27198234450356,
-          "high_risk_delay_reduction": 2.8152400476125576,
-          "n_high_risk": 814,
-          "satisfaction_rate": 0.9973375931842385,
+          "total_delay": 5630.275644342195,
+          "weighted_total_delay": 26442.768295802045,
+          "mean_delay": 5.739322777107232,
+          "high_risk_mean_delay": 11.213627506174488,
+          "high_risk_mean_delay_before": 11.666537010147408,
+          "high_risk_delay_reduction": 0.4529095039729207,
+          "n_high_risk": 464,
+          "satisfaction_rate": 0.9806094182825484,
           "turnaround_rate": 1.0,
           "curfew_rate": 1.0,
-          "capacity_rate": 0.9823943661971831,
-          "capacity_windows": 568,
-          "capacity_violations": 10,
-          "capacity_excess_departures": 28
+          "capacity_rate": 0.86,
+          "capacity_windows": 200,
+          "capacity_violations": 28,
+          "capacity_excess_departures": 77
         }
       }
     },
@@ -300,203 +347,59 @@
       "cpsat": [
         {
           "step": 0,
-          "weighted_total_delay": 76765.78492273176,
-          "high_risk_mean_delay": 16.78575577814781,
-          "satisfaction_rate": 0.987012987012987
+          "weighted_total_delay": 27335.946525627314,
+          "high_risk_mean_delay": 11.594568050068476,
+          "satisfaction_rate": 0.9468965517241379
         },
         {
           "step": 1,
-          "weighted_total_delay": 75972.71572950477,
-          "high_risk_mean_delay": 16.66820657408689,
-          "satisfaction_rate": 0.9851832596828698
+          "weighted_total_delay": 26384.824987652417,
+          "high_risk_mean_delay": 11.191136282257458,
+          "satisfaction_rate": 0.987611837577426
         },
         {
           "step": 2,
-          "weighted_total_delay": 74903.67650992124,
-          "high_risk_mean_delay": 16.454936238832197,
-          "satisfaction_rate": 0.9948119325551232
-        },
-        {
-          "step": 3,
-          "weighted_total_delay": 74485.76937296832,
-          "high_risk_mean_delay": 16.358903411222354,
-          "satisfaction_rate": 0.992485099766779
-        },
-        {
-          "step": 4,
-          "weighted_total_delay": 73118.03039509125,
-          "high_risk_mean_delay": 16.05756433771597,
-          "satisfaction_rate": 0.9940321743642968
-        },
-        {
-          "step": 5,
-          "weighted_total_delay": 68964.04385684695,
-          "high_risk_mean_delay": 15.260286834537233,
-          "satisfaction_rate": 0.9782608695652174
-        },
-        {
-          "step": 6,
-          "weighted_total_delay": 68857.08342174196,
-          "high_risk_mean_delay": 15.242420429397535,
-          "satisfaction_rate": 0.9779758783429471
-        },
-        {
-          "step": 7,
-          "weighted_total_delay": 68480.71489817381,
-          "high_risk_mean_delay": 15.15558453022788,
-          "satisfaction_rate": 0.9829261885999475
-        },
-        {
-          "step": 8,
-          "weighted_total_delay": 68373.81297789629,
-          "high_risk_mean_delay": 15.124767334269514,
-          "satisfaction_rate": 0.9826270071071335
-        },
-        {
-          "step": 9,
-          "weighted_total_delay": 68352.7334062896,
-          "high_risk_mean_delay": 15.119302121036883,
-          "satisfaction_rate": 0.9826315789473684
-        },
-        {
-          "step": 10,
-          "weighted_total_delay": 68098.91523441876,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 11,
-          "weighted_total_delay": 68098.81970385615,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 12,
-          "weighted_total_delay": 68095.78662441485,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844573234984194
-        },
-        {
-          "step": 13,
-          "weighted_total_delay": 68095.62573247863,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 14,
-          "weighted_total_delay": 68095.46908493679,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 15,
-          "weighted_total_delay": 68095.46862932996,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 16,
-          "weighted_total_delay": 68095.35468679339,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 17,
-          "weighted_total_delay": 68095.11704320143,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 18,
-          "weighted_total_delay": 68094.94890744725,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 19,
-          "weighted_total_delay": 68093.90961939609,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 20,
-          "weighted_total_delay": 68092.18096371029,
-          "high_risk_mean_delay": 15.059814012689591,
-          "satisfaction_rate": 0.9844532279314888
-        },
-        {
-          "step": 21,
-          "weighted_total_delay": 68037.75506456905,
-          "high_risk_mean_delay": 15.008675125160698,
-          "satisfaction_rate": 0.9911111111111112
-        },
-        {
-          "step": 22,
-          "weighted_total_delay": 67935.74451389787,
-          "high_risk_mean_delay": 14.98782846238912,
-          "satisfaction_rate": 0.9913702928870293
-        },
-        {
-          "step": 23,
-          "weighted_total_delay": 64307.1686453914,
-          "high_risk_mean_delay": 14.230909117609242,
-          "satisfaction_rate": 0.9978695073235686
-        },
-        {
-          "step": 24,
-          "weighted_total_delay": 64306.71663312611,
-          "high_risk_mean_delay": 14.230909117609242,
-          "satisfaction_rate": 0.9981353223228556
-        },
-        {
-          "step": 25,
-          "weighted_total_delay": 64306.098082638535,
-          "high_risk_mean_delay": 14.230757139602469,
-          "satisfaction_rate": 0.9981353223228556
-        },
-        {
-          "step": 26,
-          "weighted_total_delay": 64297.84825637197,
-          "high_risk_mean_delay": 14.230757139602469,
-          "satisfaction_rate": 0.9981358189081225
+          "weighted_total_delay": 26384.728627974066,
+          "high_risk_mean_delay": 11.191128011075994,
+          "satisfaction_rate": 0.9896623018607856
         }
       ],
       "greedy": [
         {
           "step": 0,
-          "weighted_total_delay": 66341.93723098701,
-          "high_risk_mean_delay": 14.641007564107316,
-          "satisfaction_rate": 0.9955002646903124
+          "weighted_total_delay": 26472.739677218615,
+          "high_risk_mean_delay": 11.226121897885331,
+          "satisfaction_rate": 0.9764868603042877
         },
         {
           "step": 1,
-          "weighted_total_delay": 65536.33568292538,
-          "high_risk_mean_delay": 14.463434020672528,
-          "satisfaction_rate": 0.99707368981112
+          "weighted_total_delay": 26447.246118708917,
+          "high_risk_mean_delay": 11.215455203007645,
+          "satisfaction_rate": 0.9785318559556787
         },
         {
           "step": 2,
-          "weighted_total_delay": 65496.54567595714,
-          "high_risk_mean_delay": 14.456742296890999,
-          "satisfaction_rate": 0.9973375931842385
+          "weighted_total_delay": 26445.310837040586,
+          "high_risk_mean_delay": 11.214723429122136,
+          "satisfaction_rate": 0.9806094182825484
         },
         {
           "step": 3,
-          "weighted_total_delay": 65489.24853335682,
-          "high_risk_mean_delay": 14.456742296890999,
-          "satisfaction_rate": 0.9973375931842385
+          "weighted_total_delay": 26443.432772739518,
+          "high_risk_mean_delay": 11.213913918647538,
+          "satisfaction_rate": 0.9806094182825484
         },
         {
           "step": 4,
-          "weighted_total_delay": 65489.24853335682,
-          "high_risk_mean_delay": 14.456742296890999,
-          "satisfaction_rate": 0.9973375931842385
+          "weighted_total_delay": 26442.768295802045,
+          "high_risk_mean_delay": 11.213627506174488,
+          "satisfaction_rate": 0.9806094182825484
         },
         {
           "step": 5,
-          "weighted_total_delay": 65489.24853335682,
-          "high_risk_mean_delay": 14.456742296890999,
-          "satisfaction_rate": 0.9973375931842385
+          "weighted_total_delay": 26442.768295802045,
+          "high_risk_mean_delay": 11.213627506174488,
+          "satisfaction_rate": 0.9806094182825484
         }
       ]
     }

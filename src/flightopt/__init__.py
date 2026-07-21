@@ -2,8 +2,8 @@
 
 A decoupled predict -> grade -> schedule closed loop:
 
-* ``data``     synthetic flight generator (primary source) + public loader.
-* ``features`` 7 core + 3 interaction features, leakage-safe.
+* ``data``     real flight-data loading (nycflights13 / generic CSV adapter).
+* ``features`` planning + network-state + target-encoded features, leakage-safe.
 * ``predict``  LightGBM double-head (regression + classification) vs baselines.
 * ``risk``     quantile 5-level risk grading (L4/L5 = high risk).
 * ``schedule`` OR-Tools CP-SAT slot optimization vs greedy baseline.

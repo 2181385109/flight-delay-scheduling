@@ -88,13 +88,13 @@ def run_grading(cfg: Config) -> dict:
     and the risk-grading metrics (model vs rule baseline)."""
     import json
 
-    from flightopt.data import synth
+    from flightopt.data import loader
 
     cfg.paths.ensure()
     preds = pd.read_parquet(cfg.paths.predictions_parquet)
     graded, cutpoints = grade_frame(cfg, preds)
 
-    flights = synth.load_or_generate(cfg)
+    flights = loader.load_flights(cfg)
     aux = flights.set_index("flight_id")
     graded = graded.merge(
         aux[["weather_severity", "prev_leg_delay"]], left_on="flight_id", right_index=True
@@ -118,6 +118,28 @@ def run_grading(cfg: Config) -> dict:
         "flagged_rate": float(np.mean(rule_hr)),
     }
 
+    # Operating-point analysis. Flagging the top 40% (L4/L5) is a *design
+    # choice*, not a law: report what share of flights would have to be flagged
+    # to reach the target recall, so a MISS is actionable rather than opaque.
+    score_col = "pred_delay" if cfg.risk.source == "delay" else "pred_proba"
+    scores = test[score_col].to_numpy()
+    labels = test["is_delayed15"].to_numpy().astype(int)
+    target = float(cfg.metrics.high_risk_recall_target)
+    total_pos = int(labels.sum())
+    if total_pos > 0:
+        order = np.argsort(-scores, kind="stable")
+        recalls = np.cumsum(labels[order]) / total_pos
+        idx = int(np.searchsorted(recalls, target))
+        flag_for_target = min((idx + 1) / len(labels), 1.0) if idx < len(labels) else 1.0
+    else:
+        flag_for_target = float("nan")
+    operating_point = {
+        "target_recall": target,
+        "flag_rate_for_target_recall": float(flag_for_target),
+        "current_flag_rate": float(cap_test["flagged_rate"]),
+        "current_recall": float(cap_test["high_risk_recall"]),
+    }
+
     # Proba-based grading reported as an alternative.
     graded_proba, _ = grade_frame(cfg, preds, score_col="pred_proba")
     test_proba = graded_proba[graded_proba["split"] == "test"]
@@ -133,6 +155,7 @@ def run_grading(cfg: Config) -> dict:
         "capture_test": cap_test,
         "capture_all": cap_all,
         "capture_proba_test": cap_proba_test,
+        "operating_point": operating_point,
         "rule_baseline_test": rule,
         "level_counts": {int(k): int(v) for k, v in level_counts.items()},
     }

@@ -44,6 +44,7 @@ def summarize(cfg: Config) -> dict:
             "target": tgt.high_risk_recall_target,
             "baseline_rule_recall": rule.get("high_risk_recall"),
             "pass": _ge(cap.get("high_risk_recall"), tgt.high_risk_recall_target),
+            "operating_point": rm.get("operating_point", {}),
         }
 
     # 2) Scheduling constraint satisfaction (CP-SAT vs greedy).
@@ -84,11 +85,13 @@ def summarize(cfg: Config) -> dict:
             "lightgbm_rmse": reg.get("lightgbm", {}).get("rmse"),
             "random_forest_mae": reg.get("random_forest", {}).get("mae"),
             "mean_baseline_mae": reg.get("mean_baseline", {}).get("mae"),
+            "median_baseline_mae": reg.get("median_baseline", {}).get("mae"),
             "beats_baselines": _lt(
                 reg.get("lightgbm", {}).get("mae"),
                 min(
                     reg.get("random_forest", {}).get("mae", float("inf")),
                     reg.get("mean_baseline", {}).get("mae", float("inf")),
+                    reg.get("median_baseline", {}).get("mae", float("inf")),
                 ),
             ),
         }
@@ -135,10 +138,16 @@ def headline_table(metrics: dict) -> str:
     ]
     cap = h.get("high_risk_capture_recall")
     if cap:
+        op = cap.get("operating_point") or {}
+        note = ""
+        if op.get("flag_rate_for_target_recall") is not None and not cap.get("pass", True):
+            note = (f" — reaching {_fmt(op.get('target_recall'),2)} needs "
+                    f"{_fmt(op.get('flag_rate_for_target_recall'),2)} of flights flagged")
         rows.append(
             f"| High-risk capture (Recall) | L4/L5 recall vs `is_delayed15` (test) | "
             f"**{_fmt(cap['value'])}** (P={_fmt(cap['precision'])}, F1={_fmt(cap['f1'])}) | "
-            f"≥ {_fmt(cap['target'],2)} | rule {_fmt(cap['baseline_rule_recall'])} | {_fmt(cap['pass'])} |"
+            f"≥ {_fmt(cap['target'],2)} | rule {_fmt(cap['baseline_rule_recall'])} | "
+            f"{_fmt(cap['pass'])}{note} |"
         )
     sat = h.get("constraint_satisfaction_rate")
     if sat:
@@ -159,7 +168,8 @@ def headline_table(metrics: dict) -> str:
         rows.append(
             f"| Prediction error (MAE) | test-set MAE, minutes | "
             f"**{_fmt(err['lightgbm_mae'],2)}** | lower is better | "
-            f"RF {_fmt(err['random_forest_mae'],2)} / mean {_fmt(err['mean_baseline_mae'],2)} | "
+            f"median {_fmt(err.get('median_baseline_mae'),2)} / RF {_fmt(err['random_forest_mae'],2)} "
+            f"/ mean {_fmt(err['mean_baseline_mae'],2)} | "
             f"{_fmt(err['beats_baselines'])} |"
         )
     return "\n".join(rows)
@@ -181,7 +191,7 @@ def write_report(cfg: Config, metrics: dict) -> None:
         "|---|---|---|",
     ]
     reg = pm.get("regression", {})
-    for name in ("lightgbm", "random_forest", "mean_baseline"):
+    for name in ("lightgbm", "random_forest", "median_baseline", "mean_baseline"):
         m = reg.get(name, {})
         lines.append(f"| {name} | {_fmt(m.get('mae'),3)} | {_fmt(m.get('rmse'),3)} |")
     lines += ["", "| Model | Precision | Recall | F1 | PR-AUC | ROC-AUC |", "|---|---|---|---|---|---|"]

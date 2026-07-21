@@ -18,41 +18,32 @@ paths:
   reports: outputs/reports
 
 # ---------------------------------------------------------------------
-# Synthetic data generator (primary data source, zero external deps).
+# Data source: REAL flights (nycflights13 = 2013 EWR/JFK/LGA departures
+# from the US DOT/BTS on-time database + real hourly airport weather).
 # ---------------------------------------------------------------------
-synth:
-  n_flights: 2000
-  n_airports: 10
-  n_carriers: 6
-  n_aircraft_types: 5
-  n_tails: 120
-  legs_min: 2            # min legs flown per aircraft (tail) per day
-  legs_max: 4            # max legs flown per aircraft (tail) per day
-  day_start_hour: 5      # first scheduled departure hour
-  day_end_hour: 22       # last scheduled departure hour
-  base_date: "2026-07-14"
+data:
+  source: nycflights13
+  year: 2013
+  months: [1, 2, 3]             # Q1 2013 (~80k flights); add months for more
 
-  # Aircraft cruise speed range (km/h) -> used to derive flight duration.
-  speed_kmh_min: 700
-  speed_kmh_max: 850
-  distance_km_min: 250
-  distance_km_max: 2400
+  # Prediction horizon: network-state features may only use information
+  # observable this many minutes BEFORE scheduled departure. This is the
+  # single most important anti-leakage knob for the real-time features.
+  prediction_horizon_min: 60
+  network_window_min: 180       # look-back window for network-state features
 
-  # Minimum turnaround minutes per aircraft type (sampled in this range).
-  turnaround_min: 30
-  turnaround_max: 55
-  # Actual scheduled turnaround = min_turnaround + slack (minutes).
-  turnaround_slack_min: 10
-  turnaround_slack_max: 45
+  # Not present in the source data; an operational default is assumed.
+  default_min_turnaround: 30
+  # Wind above this (mph) is a known sensor error in nycflights13 (max 1048).
+  wind_max_mph_valid: 100.0
 
-  # Raw weather field ranges (per airport, per hour; spatiotemporally smooth).
+  # Ranges used to normalize the weather-severity composite (after unit
+  # conversion: visibility -> km, wind -> knots, precipitation -> mm/h).
   weather:
-    vis_min: 0.5         # visibility (km); lower is worse
+    vis_min: 0.5
     vis_max: 12.0
-    wind_max: 45.0       # wind speed (knots)
-    precip_max: 12.0     # precipitation (mm/h)
-    thunder_prob: 0.10   # base probability of a thunderstorm flag
-    smoothing: 0.6       # AR(1) temporal smoothing factor in [0,1]
+    wind_max: 45.0
+    precip_max: 12.0
 
   # Weights for the weather-severity composite (normalized internally to sum 1).
   weather_severity_weights:
@@ -60,18 +51,6 @@ synth:
     wind: 0.25
     precip: 0.25
     thunder: 0.15
-
-  # Causal label model coefficients (see README / spec section 6.1).
-  # dep_delay = max(0, a0 + a1*wsev + a2*cong + a3*peak
-  #                    + a4*wsev*peak + a5*prev_leg_delay + N(0, sigma))
-  coeffs:
-    a0: -10.0    # intercept (tuned so is_delayed15 positive rate ~0.31)
-    a1: 21.0     # weather_severity
-    a2: 15.0     # congestion
-    a3: 5.0      # peak
-    a4: 12.0     # weather_severity * peak (non-linear interaction)
-    a5: 0.70     # prev_leg_delay propagation
-    sigma: 4.5   # gaussian noise std (minutes; tuned for identifiable signal)
 
 # ---------------------------------------------------------------------
 # Feature engineering.
@@ -81,8 +60,20 @@ features:
   peak_windows:                 # [start_hour, end_hour) treated as peak
     - [7, 10]
     - [17, 20]
-  holidays:                     # ISO dates treated as holidays
-    - "2026-07-04"
+  holidays:                     # real US federal holidays in the data year
+    - "2013-01-01"              # New Year's Day
+    - "2013-01-21"              # MLK Day
+    - "2013-02-18"              # Presidents' Day
+    - "2013-05-27"              # Memorial Day
+    - "2013-07-04"              # Independence Day
+    - "2013-09-02"              # Labor Day
+    - "2013-10-14"              # Columbus Day
+    - "2013-11-11"              # Veterans Day
+    - "2013-11-28"              # Thanksgiving
+    - "2013-11-29"              # day after Thanksgiving
+    - "2013-12-24"              # Christmas Eve
+    - "2013-12-25"              # Christmas
+    - "2013-12-31"              # New Year's Eve
   time_buckets:                 # hour -> coarse bucket label boundaries
     early: [5, 7]
     morning_peak: [7, 10]
@@ -95,14 +86,16 @@ features:
 # ---------------------------------------------------------------------
 predict:
   test_size: 0.20               # trailing fraction for the time-series split
-  group_kfold_splits: 5         # GroupKFold on tail_id
-  optuna_trials: 30             # HPO trials (spec suggests 50-100; CI overrides)
-  optuna_timeout_s: 180
+  group_kfold_splits: 3         # GroupKFold on tail_id (folds over ~80k flights)
+  optuna_trials: 15             # HPO trials; raise for a longer, better search
+  optuna_timeout_s: 600
   early_stopping_rounds: 50
-  rf_n_estimators: 300          # RandomForest baseline trees (lower for big data)
+  rf_n_estimators: 150          # RandomForest baseline trees
+  # A dispatcher-style naive rule, kept deliberately reasonable (not a strawman):
+  # "expect delay if the weather is poor OR the aircraft's previous leg was late".
   rule_baseline:
-    weather_severity_threshold: 0.55
-    prev_leg_delay_threshold: 20.0
+    weather_severity_threshold: 0.35
+    prev_leg_delay_threshold: 15.0
   # LightGBM Optuna search space.
   search_space:
     num_leaves: [15, 127]
@@ -139,6 +132,9 @@ schedule:
   only_high_risk: false         # optimize all flights (CP-SAT balances capacity globally)
   solver_time_limit_s: 25
   greedy_max_passes: 6
+  # Re-timing a schedule is a single-day problem: capacity windows, curfew and
+  # turnaround all live within one operating day. null = busiest day loaded.
+  day: null
 
 # ---------------------------------------------------------------------
 # Metric targets (for reporting / pass-fail annotation only).

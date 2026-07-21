@@ -1,7 +1,7 @@
 """Load ``config.yaml`` into a strongly-typed configuration object.
 
 Dataclasses mirror the YAML structure so the rest of the codebase reads typed
-attributes (``cfg.synth.n_flights``) instead of dict lookups.  Unknown keys in
+attributes (``cfg.data.months``) instead of dict lookups.  Unknown keys in
 the YAML are ignored gracefully, and the raw dict remains available via
 ``cfg.raw`` for anything not promoted to a field.
 """
@@ -18,28 +18,22 @@ from flightopt.paths import ProjectPaths, build_paths, find_repo_root
 
 
 @dataclass
-class SynthConfig:
-    n_flights: int = 2000
-    n_airports: int = 10
-    n_carriers: int = 6
-    n_aircraft_types: int = 5
-    n_tails: int = 120
-    legs_min: int = 2
-    legs_max: int = 4
-    day_start_hour: int = 5
-    day_end_hour: int = 22
-    base_date: str = "2026-07-14"
-    speed_kmh_min: float = 700.0
-    speed_kmh_max: float = 850.0
-    distance_km_min: float = 250.0
-    distance_km_max: float = 2400.0
-    turnaround_min: int = 30
-    turnaround_max: int = 55
-    turnaround_slack_min: int = 10
-    turnaround_slack_max: int = 45
+class DataConfig:
+    """Real flight-data source configuration."""
+
+    source: str = "nycflights13"
+    year: int = 2013
+    months: list[int] = field(default_factory=lambda: [1, 2, 3])
+    # Network-state features may only use information observable this many
+    # minutes before scheduled departure (the assumed prediction horizon).
+    prediction_horizon_min: int = 60
+    network_window_min: int = 180
+    # Not present in the source data; an operational default is assumed.
+    default_min_turnaround: int = 30
+    # Wind above this (mph) is a known sensor error in nycflights13 (max 1048).
+    wind_max_mph_valid: float = 100.0
     weather: dict[str, float] = field(default_factory=dict)
     weather_severity_weights: dict[str, float] = field(default_factory=dict)
-    coeffs: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -83,6 +77,9 @@ class ScheduleConfig:
     only_high_risk: bool = True
     solver_time_limit_s: int = 25
     greedy_max_passes: int = 6
+    # Which operating day to re-time (ISO date). ``None`` picks the busiest day
+    # in the loaded window. Scheduling is inherently a single-day problem.
+    day: str | None = None
 
     @property
     def offsets(self) -> list[int]:
@@ -103,7 +100,7 @@ class MetricsConfig:
 class Config:
     seed: int
     paths: ProjectPaths
-    synth: SynthConfig
+    data: DataConfig
     features: FeaturesConfig
     predict: PredictConfig
     risk: RiskConfig
@@ -153,7 +150,7 @@ def load_config(
     return Config(
         seed=int(raw.get("seed", 42)),
         paths=paths,
-        synth=SynthConfig(**_filter_kwargs(SynthConfig, raw.get("synth", {}))),
+        data=DataConfig(**_filter_kwargs(DataConfig, raw.get("data", {}))),
         features=FeaturesConfig(**_filter_kwargs(FeaturesConfig, raw.get("features", {}))),
         predict=PredictConfig(**_filter_kwargs(PredictConfig, raw.get("predict", {}))),
         risk=RiskConfig(**_filter_kwargs(RiskConfig, raw.get("risk", {}))),

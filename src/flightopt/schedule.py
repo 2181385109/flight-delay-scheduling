@@ -65,7 +65,8 @@ class ScheduleProblem:
     offsets: list[int]
     feasible: np.ndarray         # (n_flights, n_offsets) bool (curfew feasibility)
     optimized: np.ndarray        # bool: flight participates in optimization
-    tail_pairs: list[tuple[int, int]]  # (prev_idx, next_idx) consecutive legs
+    # (prev_idx, next_idx, effective_min_turnaround) for consecutive same-day legs
+    tail_pairs: list[tuple[int, int, int]]
 
     @property
     def n(self) -> int:
@@ -123,13 +124,7 @@ def build_problem(
 
     # Base features (offset 0) and the columns that shift with the offset.
     stats = bundle.stats
-    X0, _, _, _ = build_features(
-        flights,
-        weather_cfg=bundle.weather_cfg or cfg.synth.weather,
-        weather_weights=bundle.weather_weights or cfg.synth.weather_severity_weights,
-        features_cfg=cfg.features,
-        fit_stats=stats,
-    )
+    X0, _, _, _ = build_features(flights, cfg, stats)
     wsev = X0["weather_severity"].to_numpy()
     per_origin_sorted = {
         ap: np.sort(dep_min[origin == ap]) for ap in np.unique(origin)
@@ -161,6 +156,11 @@ def build_problem(
         Xo["time_bucket"] = pd.Categorical(
             time_bucket(new_hour, cfg.features.time_buckets), categories=bucket_cats
         )
+        # The origin x hour historical rate also moves with the slot.
+        oh_map, oh_def = stats["encodings"]["origin_hour_delay_rate"]
+        Xo["origin_hour_delay_rate"] = [
+            oh_map.get((ap, int(h)), oh_def) for ap, h in zip(origin, new_hour)
+        ]
         frames.append(Xo)
         feasible[:, j] = ~_in_curfew(new_min, cfg.schedule.curfew_hours)
     # The original schedule is always a valid input (offset 0 grandfathered).
@@ -174,13 +174,32 @@ def build_problem(
     weight = np.where(high_risk, cfg.schedule.weight_high_risk, cfg.schedule.weight_normal)
     optimized = high_risk.copy() if cfg.schedule.only_high_risk else np.ones(n, dtype=bool)
 
-    # Consecutive-leg pairs per tail (for turnaround constraints).
-    tail_pairs: list[tuple[int, int]] = []
-    order = flights.sort_values(["tail_id", "leg_index"])
-    for _, grp in order.groupby("tail_id"):
+    # Consecutive same-day leg pairs per tail (turnaround constraints).
+    #
+    # Real schedules sometimes plan a turnaround shorter than our assumed
+    # minimum, so demanding `min_turnaround` outright would make the model
+    # infeasible on real data. The operationally correct constraint for
+    # *re-timing an existing schedule* is: never shorten a turnaround below
+    # what was already planned, and never below the minimum -- whichever is
+    # smaller. This holds trivially at offset 0, so the original schedule is
+    # always a feasible starting point.
+    min_turn = flights["min_turnaround"].to_numpy().astype(int)
+    tail_pairs: list[tuple[int, int, int]] = []
+    tmp = flights[["tail_id"]].copy()
+    tmp["_day"] = dep.dt.date
+    tmp["_t"] = dep_min
+    for _, grp in tmp.sort_values(["tail_id", "_day", "_t"]).groupby(
+        ["tail_id", "_day"], sort=False
+    ):
         idx = grp.index.to_numpy()
         for a, b in zip(idx[:-1], idx[1:]):
-            tail_pairs.append((int(a), int(b)))
+            a, b = int(a), int(b)
+            # NOTE: the planned gap can be negative in real data (the next
+            # departure precedes the previous arrival). It is *not* clamped at
+            # zero, so the constraint holds with equality at offset 0 and the
+            # original schedule stays feasible for every solver.
+            planned_gap = int(dep_min[b] - arr_min[a])
+            tail_pairs.append((a, b, int(min(min_turn[b], planned_gap))))
 
     return ScheduleProblem(
         flight_id=flights["flight_id"].to_numpy(),
@@ -212,8 +231,8 @@ def constraint_report(p: ScheduleProblem, off: np.ndarray, cfg: Config) -> dict:
     # Turnaround (hard).
     turn_total = len(p.tail_pairs)
     turn_ok = 0
-    for a, b in p.tail_pairs:
-        if (p.dep_min[b] + off[b]) >= (p.arr_min[a] + off[a]) + p.min_turnaround[b] - _EPS:
+    for a, b, eff_turn in p.tail_pairs:
+        if (p.dep_min[b] + off[b]) >= (p.arr_min[a] + off[a]) + eff_turn - _EPS:
             turn_ok += 1
 
     # Curfew (hard).
@@ -304,8 +323,8 @@ def optimize_cpsat(p: ScheduleProblem, cfg: Config) -> tuple[np.ndarray, list[di
         return off_vars[i] if i in off_vars else 0
 
     # Turnaround (hard).
-    for a, b in p.tail_pairs:
-        rhs = int(p.arr_min[a] + p.min_turnaround[b] - p.dep_min[b])
+    for a, b, eff_turn in p.tail_pairs:
+        rhs = int(p.arr_min[a] + eff_turn - p.dep_min[b])
         model.Add(off_expr(b) - off_expr(a) >= rhs)
 
     # Capacity (soft).
@@ -354,6 +373,14 @@ def optimize_cpsat(p: ScheduleProblem, cfg: Config) -> tuple[np.ndarray, list[di
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         for i, v in off_vars.items():
             off[i] = int(solver.Value(v))
+    else:
+        # Falling back to the original schedule would otherwise look like a
+        # legitimate "no change" result, so make the failure loud.
+        print(
+            f"[schedule] WARNING: CP-SAT returned {solver.StatusName(status)} for "
+            f"{p.n} flights within {cfg.schedule.solver_time_limit_s}s; keeping the "
+            f"original schedule. Reduce the problem size or raise the time limit."
+        )
 
     trace = _snapshots_to_trace(p, cb.snapshots, cfg)
     meta = {
@@ -407,8 +434,8 @@ def optimize_greedy(p: ScheduleProblem, cfg: Config) -> tuple[np.ndarray, list[d
         reverse=True,
     )
 
-    prev_of = {b: a for a, b in p.tail_pairs}
-    next_of = {a: b for a, b in p.tail_pairs}
+    prev_of = {b: (a, t) for a, b, t in p.tail_pairs}
+    next_of = {a: (b, t) for a, b, t in p.tail_pairs}
 
     trace = []
     for _pass in range(cfg.schedule.greedy_max_passes):
@@ -423,12 +450,12 @@ def optimize_greedy(p: ScheduleProblem, cfg: Config) -> tuple[np.ndarray, list[d
                 # Turnaround feasibility against current neighbor offsets.
                 ok = True
                 if i in prev_of:
-                    a = prev_of[i]
-                    if (p.dep_min[i] + o) < (p.arr_min[a] + off[a]) + p.min_turnaround[i]:
+                    a, eff_prev = prev_of[i]
+                    if (p.dep_min[i] + o) < (p.arr_min[a] + off[a]) + eff_prev:
                         ok = False
                 if ok and i in next_of:
-                    b = next_of[i]
-                    if (p.dep_min[b] + off[b]) < (p.arr_min[i] + o) + p.min_turnaround[b]:
+                    b, eff_next = next_of[i]
+                    if (p.dep_min[b] + off[b]) < (p.arr_min[i] + o) + eff_next:
                         ok = False
                 if not ok:
                     continue
@@ -507,15 +534,32 @@ def optimize(
     return schedule_df, trace, metrics
 
 
+def select_operating_day(flights: pd.DataFrame, cfg: Config):
+    """Restrict the schedule to a single operating day (config or busiest)."""
+    days = pd.to_datetime(flights["sched_dep"]).dt.date
+    if cfg.schedule.day:
+        target = pd.Timestamp(cfg.schedule.day).date()
+    else:
+        target = days.value_counts().idxmax()
+    subset = flights[days == target].reset_index(drop=True)
+    return subset, target
+
+
 def run_scheduling(cfg: Config, solver: str = "cpsat") -> dict:
     """CLI entry: load inputs, run the chosen solver + the greedy baseline for
     comparison, persist the schedule, and return the metrics."""
-    from flightopt.data import synth
+    from flightopt.data import loader
 
     cfg.paths.ensure()
-    flights = synth.load_or_generate(cfg)
+    flights = loader.load_flights(cfg)
     graded = pd.read_parquet(cfg.paths.graded_parquet)
     bundle = ModelBundle.load(cfg)
+
+    # Re-timing is a single-day problem: capacity windows, curfew and turnaround
+    # all live inside one operating day, and solving a whole quarter at once is
+    # both meaningless operationally and intractable for CP-SAT.
+    flights, day = select_operating_day(flights, cfg)
+    graded = graded[graded["flight_id"].isin(set(flights["flight_id"]))]
 
     schedule_df, trace, metrics = optimize(cfg, flights, graded, bundle, solver=solver)
     schedule_df.to_parquet(cfg.paths.schedule_parquet, index=False)
@@ -529,7 +573,13 @@ def run_scheduling(cfg: Config, solver: str = "cpsat") -> dict:
     else:
         trace = {"greedy": trace}
 
-    result = {"primary_solver": solver, "comparison": comparison, "trace": trace}
+    result = {
+        "primary_solver": solver,
+        "operating_day": str(day),
+        "n_flights": int(len(flights)),
+        "comparison": comparison,
+        "trace": trace,
+    }
     import json
 
     with open(cfg.paths.reports / "schedule_metrics.json", "w", encoding="utf-8") as fh:

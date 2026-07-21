@@ -1,43 +1,49 @@
 {
   "source": "delay",
   "cutpoints": [
-    2.039193607314718,
-    5.058553504972082,
-    8.75576269199108,
-    12.407427908472975
+    0.022158316844983764,
+    0.25645845248065036,
+    0.8978550513914955,
+    3.7225340235703728
   ],
   "capture_test": {
-    "high_risk_recall": 0.8292682926829268,
-    "high_risk_precision": 0.5862068965517241,
-    "high_risk_f1": 0.6868686868686869,
-    "flagged_rate": 0.435,
-    "positive_rate": 0.3075
+    "high_risk_recall": 0.663571649644073,
+    "high_risk_precision": 0.34425176621708414,
+    "high_risk_f1": 0.4533248757796807,
+    "flagged_rate": 0.3984644913627639,
+    "positive_rate": 0.20671785028790787
   },
   "capture_all": {
-    "high_risk_recall": 0.8232323232323232,
-    "high_risk_precision": 0.6007371007371007,
-    "high_risk_f1": 0.6946022727272727,
-    "flagged_rate": 0.407,
-    "positive_rate": 0.297
+    "high_risk_recall": 0.6658096074250596,
+    "high_risk_precision": 0.3399071554346086,
+    "high_risk_f1": 0.4500540471800089,
+    "flagged_rate": 0.39970056048934044,
+    "positive_rate": 0.20405395029815984
   },
   "capture_proba_test": {
-    "high_risk_recall": 0.8943089430894309,
-    "high_risk_precision": 0.5288461538461539,
-    "high_risk_f1": 0.6646525679758308,
-    "flagged_rate": 0.52,
-    "positive_rate": 0.3075
+    "high_risk_recall": 0.6675951717734447,
+    "high_risk_precision": 0.3529123036649215,
+    "high_risk_f1": 0.46173605908166543,
+    "flagged_rate": 0.3910428662827895,
+    "positive_rate": 0.20671785028790787
+  },
+  "operating_point": {
+    "target_recall": 0.8,
+    "flag_rate_for_target_recall": 0.5808701215611004,
+    "current_flag_rate": 0.3984644913627639,
+    "current_recall": 0.663571649644073
   },
   "rule_baseline_test": {
-    "high_risk_recall": 0.43089430894308944,
-    "high_risk_precision": 0.828125,
-    "high_risk_f1": 0.5668449197860963,
-    "flagged_rate": 0.16
+    "high_risk_recall": 0.1612503868771278,
+    "high_risk_precision": 0.6480099502487562,
+    "high_risk_f1": 0.25824039653035935,
+    "flagged_rate": 0.05143953934740883
   },
   "level_counts": {
-    "1": 399,
-    "2": 385,
-    "3": 402,
-    "4": 385,
-    "5": 429
+    "1": 16052,
+    "2": 15540,
+    "3": 15319,
+    "4": 15648,
+    "5": 15587
   }
 }

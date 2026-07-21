@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from flightopt.data import synth
+from flightopt.data import loader
 from flightopt.predict import ModelBundle
 from flightopt.schedule import (
     build_problem,
@@ -17,7 +17,7 @@ from flightopt.schedule import (
 
 
 def _problem(cfg):
-    flights = synth.load_or_generate(cfg)
+    flights = loader.load_flights(cfg)
     graded = pd.read_parquet(cfg.paths.graded_parquet)
     bundle = ModelBundle.load(cfg)
     return build_problem(cfg, flights, graded, bundle)
