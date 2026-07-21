@@ -25,6 +25,9 @@ data/processed/*
 outputs/models/*
 !outputs/models/.gitkeep
 
+# --- Real-data benchmark working tree (regenerate with the benchmark script) ---
+benchmarks/
+
 # --- Large figures / animations (keep small PNGs, drop heavy media) ---
 outputs/figures/*.mp4
 outputs/figures/*.gif

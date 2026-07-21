@@ -245,9 +245,10 @@ def run_training(cfg: Config, df: pd.DataFrame) -> dict:
     # --- Baselines ---------------------------------------------------------
     Xoh_tr = one_hot_for_baseline(X_tr)
     Xoh_te = one_hot_for_baseline(X_te).reindex(columns=Xoh_tr.columns, fill_value=0)
-    rf_reg = RandomForestRegressor(n_estimators=300, random_state=cfg.seed, n_jobs=-1)
+    n_rf = cfg.predict.rf_n_estimators
+    rf_reg = RandomForestRegressor(n_estimators=n_rf, random_state=cfg.seed, n_jobs=-1)
     rf_reg.fit(Xoh_tr, yr_tr)
-    rf_clf = RandomForestClassifier(n_estimators=300, random_state=cfg.seed, n_jobs=-1)
+    rf_clf = RandomForestClassifier(n_estimators=n_rf, random_state=cfg.seed, n_jobs=-1)
     rf_clf.fit(Xoh_tr, yc_tr)
 
     # --- Test-set predictions ---------------------------------------------

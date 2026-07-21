@@ -99,6 +99,7 @@ predict:
   optuna_trials: 30             # HPO trials (spec suggests 50-100; CI overrides)
   optuna_timeout_s: 180
   early_stopping_rounds: 50
+  rf_n_estimators: 300          # RandomForest baseline trees (lower for big data)
   rule_baseline:
     weather_severity_threshold: 0.55
     prev_leg_delay_threshold: 20.0

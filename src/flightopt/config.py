@@ -57,6 +57,7 @@ class PredictConfig:
     optuna_trials: int = 30
     optuna_timeout_s: int = 180
     early_stopping_rounds: int = 50
+    rf_n_estimators: int = 300
     rule_baseline: dict[str, float] = field(default_factory=dict)
     search_space: dict[str, Any] = field(default_factory=dict)
 
