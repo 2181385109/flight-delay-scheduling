@@ -65,6 +65,14 @@ def summarize(cfg: Config) -> dict:
             "pass": _ge(after.get("satisfaction_rate"), tgt.constraint_satisfaction_target),
         }
         # 3) High-risk delay reduction (CP-SAT vs before, vs greedy).
+        before = cpsat.get("before", {})
+        tot_before = before.get("total_delay")
+        tot_after = after.get("total_delay")
+        tot_pct = (
+            (tot_before - tot_after) / tot_before * 100.0
+            if tot_before and tot_after is not None
+            else None
+        )
         headline["high_risk_delay_reduction_min"] = {
             "definition": "Mean predicted-delay reduction per high-risk flight (offset 0 -> optimized offset).",
             "value": after.get("high_risk_delay_reduction"),
@@ -73,6 +81,13 @@ def summarize(cfg: Config) -> dict:
             "target": tgt.delay_reduction_target,
             "baseline_greedy": g_after.get("high_risk_delay_reduction"),
             "pass": _ge(after.get("high_risk_delay_reduction"), tgt.delay_reduction_target),
+            # All-flights total predicted delay reduction (reduction in *predicted*
+            # delay, not measured real-world delay).
+            "total_delay_before": tot_before,
+            "total_delay_after": tot_after,
+            "total_delay_reduction_pct": tot_pct,
+            "operating_day": sm.get("operating_day"),
+            "n_flights_day": sm.get("n_flights"),
         }
 
     # 4) Prediction error (auxiliary): LightGBM vs RF vs mean baseline.
@@ -158,9 +173,13 @@ def headline_table(metrics: dict) -> str:
         )
     red = h.get("high_risk_delay_reduction_min")
     if red:
+        tot = red.get("total_delay_reduction_pct")
+        tot_note = (f"; all-flights total predicted delay −{_fmt(tot,2)}%"
+                    if tot is not None else "")
         rows.append(
-            f"| High-risk delay reduction | mean Δdelay/flight (CP-SAT) | "
-            f"**{_fmt(red['value'],2)} min** ({_fmt(red['mean_delay_before'],1)}→{_fmt(red['mean_delay_after'],1)}) | "
+            f"| High-risk delay reduction | mean Δ predicted delay/flight (CP-SAT) | "
+            f"**{_fmt(red['value'],2)} min** ({_fmt(red['mean_delay_before'],1)}→"
+            f"{_fmt(red['mean_delay_after'],1)}{tot_note}) | "
             f"≥ {_fmt(red['target'],1)} min | greedy {_fmt(red['baseline_greedy'],2)} | {_fmt(red['pass'])} |"
         )
     err = h.get("prediction_error")
@@ -217,27 +236,39 @@ def write_report(cfg: Config, metrics: dict) -> None:
         lines += ["", "## Top regressor features (gain)", ""]
         lines += [f"- `{name}`: {_fmt(val)}" for name, val in top]
 
-    sched = metrics.get("schedule", {}).get("comparison", {})
+    schedule_block = metrics.get("schedule", {})
+    sched = schedule_block.get("comparison", {})
     if sched:
+        day = schedule_block.get("operating_day")
+        n_day = schedule_block.get("n_flights")
         lines += [
             "",
             "## Scheduling: CP-SAT vs greedy vs before",
             "",
-            "| Solver | High-risk mean delay | Δ reduction | Satisfaction | Capacity violations |",
-            "|---|---|---|---|---|",
+            f"Re-timing one real operating day (**{day}**, {n_day} flights). "
+            "Baselines: the original as-flown schedule (`before`) and a greedy "
+            "local search. Delay figures are reductions in *predicted* delay.",
+            "",
+            "| Solver | High-risk mean delay (min) | Δ/flight | Total delay (all, min) | Total Δ | Satisfaction | Capacity violations |",
+            "|---|---|---|---|---|---|---|",
         ]
         before = (sched.get("cpsat") or sched.get("greedy") or {}).get("before", {})
+        tot_b = before.get("total_delay")
         lines.append(
             f"| before | {_fmt(before.get('high_risk_mean_delay'),2)} | - | "
-            f"{_fmt(before.get('satisfaction_rate'))} | {before.get('capacity_violations')} |"
+            f"{_fmt(tot_b,1)} | - | {_fmt(before.get('satisfaction_rate'))} | "
+            f"{before.get('capacity_violations')} |"
         )
         for name in ("cpsat", "greedy"):
             s = sched.get(name)
             if s:
                 a = s["after"]
+                tot_a = a.get("total_delay")
+                pct = ((tot_b - tot_a) / tot_b * 100.0) if tot_b and tot_a is not None else None
                 lines.append(
                     f"| {name} | {_fmt(a.get('high_risk_mean_delay'),2)} | "
-                    f"{_fmt(a.get('high_risk_delay_reduction'),2)} | {_fmt(a.get('satisfaction_rate'))} | "
+                    f"{_fmt(a.get('high_risk_delay_reduction'),2)} | {_fmt(tot_a,1)} | "
+                    f"−{_fmt(pct,2)}% | {_fmt(a.get('satisfaction_rate'))} | "
                     f"{a.get('capacity_violations')} |"
                 )
     lines.append("")
